@@ -2,7 +2,7 @@
 ///  @file Vec3.cpp
 ///  @brief encapsulates a 3d Point / Vector object. Homogenous is not needed.
 
-#include "include/Vec3.h"
+#include "include/Vec3_cpu.h"
 
 float Vec3::dot(const Vec3 &_rhs) const
 {

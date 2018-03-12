@@ -18,7 +18,7 @@
 #include <cmath>
 #include <cassert>
 
-#include"include/Mat3_cpu.h"
+#include "Mat3_cpu.h"
 
 class Vec3
 {

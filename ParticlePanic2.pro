@@ -1,2 +1,2 @@
 TEMPLATE = subdirs
-SUBDIRS = libPP2_gpu libPP2_cpu test
+SUBDIRS = libPP2_cpu test libPP2_gpu

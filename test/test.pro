@@ -9,11 +9,11 @@ QMAKE_CXXFLAGS += -std=c++11 -Wall -Wextra -pedantic
 
 SOURCES += \
     src/Toolbar.cpp \
-    src/Main.cpp \
+    src/Main.cpp
 
 HEADERS += \
     include/Toolbar.h \
-    include/Commands.h \
+    include/Commands.h
 
 LIBS += -L/usr/local/lib -L../lib -lPP2_cpu -lPP2_gpu
 

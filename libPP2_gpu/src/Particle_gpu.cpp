@@ -2,7 +2,7 @@
 ///  @file Particle.cpp
 ///  @brief Particle class that includes all attributes of the particle
 
-#include "include/Particle_cpu.h"
+#include "include/Particle_gpu.h"
 
 void Particle::drawParticle(const float _pointsize)
 {

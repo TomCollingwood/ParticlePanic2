@@ -20,7 +20,7 @@ HEADERS += include/*.h
 SOURCES += src/*.cpp
 
 # Set up the include path
-INCLUDEPATH += include
+INCLUDEPATH += ./include
 
 # Set up the post install script to copy the headers into the appropriate directory
 includeinstall.commands = mkdir -p $$INC_INSTALL_DIR && cp include/*.h $$INC_INSTALL_DIR

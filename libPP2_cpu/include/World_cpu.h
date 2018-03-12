@@ -28,10 +28,10 @@
 #include <GL/glu.h>
 #endif
 
-#include "include/Vec3.h"
-#include "include/Particle.h"
-#include "include/ParticleProperties_cpu.h"
-#include "include/MarchingAlgorithms.h"
+#include "Vec3_cpu.h"
+#include "Particle_cpu.h"
+#include "ParticleProperties_cpu.h"
+#include "MarchingAlgorithms_cpu.h"
 
 
 /**

@@ -2,7 +2,7 @@
 ///  @file World.cpp
 ///  @brief contains all particles and methods to draw and update them
 
-#include "include/World_cpu.h"
+#include "include/World_gpu.h"
 
 World::World() :
   m_isInit(false),

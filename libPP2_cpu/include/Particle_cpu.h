@@ -17,11 +17,11 @@
 
 #include <cmath>
 #include <vector>
-#include "Vec3.h"
+#include "Vec3_cpu.h"
 #include <algorithm>
 #include <cstdlib>
 
-#include "ParticleProperties.h"
+#include "ParticleProperties_cpu.h"
 
 
 class Particle

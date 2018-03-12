@@ -2,7 +2,7 @@
 ///  @file ParticleProperties.cpp
 ///  @brief contains the properties of a particle type. Each particle has a pointer to such a class.
 
-#include "include/ParticleProperties.h"
+#include "include/ParticleProperties_cpu.h"
 
 GLfloat ParticleProperties::getAlpha() const
 {

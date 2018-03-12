@@ -4,7 +4,7 @@
 ///
 
 
-#include "include/Mat3_cpu.h"
+#include "include/Mat3_gpu.h"
 
 Mat3::Mat3(GLfloat _s) :
   m_00(_s),

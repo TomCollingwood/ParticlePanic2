@@ -3,7 +3,7 @@
 ///  @brief   Contains the marching cube / square triangle vectors and algorithms to draw and create them
 ///  @author  Paul Bourke & Thomas Collingwood
 
-#include "include/MarchingAlgorithms_cpu.h"
+#include "include/MarchingAlgorithms_gpu.h"
 
 /// The following section is modified from :-
 /// Paul Bourke (1994). Polygonising a scalar field [online]. [Accessed 2016].
