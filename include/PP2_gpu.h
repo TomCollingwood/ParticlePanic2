@@ -35,17 +35,17 @@ namespace PP2_GPU {
 
     //-------------------------- KERNELS ----------------------------
 
-//    __global__ void pointHash2D(unsigned int *hash,
-//                              const float *Px,
-//                              const float *Py,
-//                              //const float *Pz,
-//                              const unsigned int N,
-//                              const unsigned int res);
+    __global__ void pointHash2D(unsigned int *hash,
+                              const float *Px,
+                              const float *Py,
+                              //const float *Pz,
+                              const unsigned int N,
+                              const unsigned int res);
 
-//    __global__ void countCellOccupancy(unsigned int *cellOcc,
-//                                       unsigned int *hash,
-//                                       unsigned int nCells,
-//                                       unsigned int nPoints);
+    __global__ void countCellOccupancy(unsigned int *cellOcc,
+                                       unsigned int *hash,
+                                       unsigned int nCells,
+                                       unsigned int nPoints);
 
     void initData();
 
