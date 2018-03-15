@@ -14,20 +14,28 @@ TARGET = $$LIB_INSTALL_DIR/PP2_gpu
 QMAKE_CXXFLAGS += -std=c++11 -fPIC
 
 # Directories
-INCLUDEPATH += include ${CUDA_PATH}/include ${CUDA_PATH}/include/cuda ${CUDA_PATH}/samples/common/inc
+INCLUDEPATH += ./include ${CUDA_PATH}/include ${CUDA_PATH}/include/cuda ${CUDA_PATH}/samples/common/inc
 
-HEADERS += include/*.h
+HEADERS += ./include/*.h \
+            ./include/PP2_gpu.cuh
 
 # Include source files
 SOURCES += src/*.cpp
 
+
+#LIBS += -L/usr/lib/x86_64-linux-gnu -lcuda -lcudart -lcudadevrt -lcurand
 # Link with the following libraries
-LIBS += -L${CUDA_PATH}/lib64 -L${CUDA_PATH}/lib64/nvidia -lcudadevrt \
-                                                         -lcuda \
-                                                         -lcudart \
-                                                         -lcurand \
-                                                         -licudata \
-                                                         -lcudart_static
+#LIBS += -L${CUDA_PATH}/lib64 -L${CUDA_PATH}/lib64/nvidia -L/usr/lib/x86_64-linux-gnu \
+#                                                         -lcuda \
+#                                                         -lcudart \
+#                                                         -lcudadevrt \
+#                                                         -lcurand \
+#                                                         -licudata \
+#                                                         -lcudart_static
+
+# Link with the following libraries
+LIBS += -L${CUDA_PATH}/lib64 -L${CUDA_PATH}/lib64/nvidia -lcudadevrt -lcuda -lcudart -lcurand
+
 
 # CUDA_COMPUTE_ARCH - This will enable nvcc to compiler appropriate architecture specific code for different compute versions
 # Set your local CUDA_ARCH environment variable to compile for your particular architecture.
@@ -89,3 +97,6 @@ QMAKE_EXTRA_COMPILERS += cudalink
 includeinstall.commands = mkdir -p $$INC_INSTALL_DIR && cp include/*.h $$INC_INSTALL_DIR
 QMAKE_EXTRA_TARGETS += includeinstall
 POST_TARGETDEPS += includeinstall
+
+DISTFILES += \
+    include/PP2_gpu.cuh

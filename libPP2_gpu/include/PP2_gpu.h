@@ -26,32 +26,36 @@ namespace PP2_GPU {
 
     int m_numPoints = 0;
     int m_gridResolution = 4;
+    float m_interactionRadius = 0.05f;
+    float m_timestep = 1.0f;
 
     thrust::device_vector<unsigned int> d_cellOcc;
     thrust::device_vector<unsigned int> d_hash;
+    thrust::device_vector<unsigned int> d_scatterAdd;
 
     unsigned int * d_hash_ptr;
     unsigned int * d_cellOcc_ptr;
-
-    //-------------------------- KERNELS ----------------------------
-
-    __global__ void pointHash2D(unsigned int *hash,
-                              const float *Px,
-                              const float *Py,
-                              //const float *Pz,
-                              const unsigned int N,
-                              const unsigned int res);
-
-    __global__ void countCellOccupancy(unsigned int *cellOcc,
-                                       unsigned int *hash,
-                                       unsigned int nCells,
-                                       unsigned int nPoints);
+    unsigned int * d_scatterAdd_ptr;
 
     void initData();
 
     void hashOccSort();
 
     void addParticle(float P_x, float P_y, float V_x, float V_y);
+
+    void castPointers();
+
+    void simulate();
+
+    void getSurroundingParticles(unsigned int hashIndex,
+                                 thrust::device_vector<unsigned int> d_result );
+
+
+    //--------------- INPUTS-------------------------
+
+    bool m_rain;
+    bool m_gravity;
+
 }
 
 #endif //_RAND_GPU_H

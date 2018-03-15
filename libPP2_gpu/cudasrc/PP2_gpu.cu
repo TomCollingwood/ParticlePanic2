@@ -1,16 +1,24 @@
-#include <cuda.h>
-#include <curand.h>
 #include <stdio.h>
 #include <time.h>
 #include <iostream>
+#include <math.h>
 
+// For the CUDA runtime routines (prefixed with "cuda_")
+#include <cuda_runtime.h>
+#include <cuda.h>
+#include <curand.h>
+#include <cuda_runtime_api.h>
+#include <device_functions.h>
 
 //// For thrust routines (e.g. stl-like operators and algorithms on vectors)
 #include <thrust/host_vector.h>
 #include <thrust/device_vector.h>
+#include <thrust/iterator/zip_iterator.h>
+#include <thrust/tuple.h>
 #include <thrust/sort.h>
 
 #include "PP2_gpu.h"
+#include "PP2_gpu.cuh"
 
 /**
   * Find the cell hash of each point. The hash is returned as the mapping of a point index to a cell.
@@ -23,7 +31,7 @@
   * \param N The number of points (dimensions of Px,Py,Pz and hash)
   * \param res The resolution of our grid.
   */
-__global__ void PP2_GPU::pointHash2D(unsigned int *hash,
+__global__ void pointHash2D(unsigned int *hash,
                           const float *Px,
                           const float *Py,
                           //const float *Pz,
@@ -70,7 +78,7 @@ __global__ void PP2_GPU::pointHash2D(unsigned int *hash,
   * \param nCells The size of the cellOcc vector (GRID_RES^3)
   * \param nPoints The number of points (size of hash)
   */
-__global__ void PP2_GPU::countCellOccupancy(unsigned int *cellOcc,
+__global__ void countCellOccupancy(unsigned int *cellOcc,
                                    unsigned int *hash,
                                    unsigned int nCells,
                                    unsigned int nPoints) {
@@ -82,6 +90,183 @@ __global__ void PP2_GPU::countCellOccupancy(unsigned int *cellOcc,
         atomicAdd(&(cellOcc[hash[idx]]), 1);
     }
 }
+
+__global__ void viscosity(unsigned int _N,
+                          unsigned int _gridRes,
+                          float _iRadius,
+                          float _timestep,
+                          float * _P_x,
+                          float * _P_y,
+                          float * _V_x,
+                          float * _V_y,
+                          unsigned int * _d_hash,
+                          unsigned int * _d_cellOcc,
+                          unsigned int * _d_scatterAdd)
+{
+    uint idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if(idx > _N) return;
+
+    unsigned int hashCentre =  _d_hash[idx];
+
+    unsigned int imin, imax, jmin, jmax;
+    if(hashCentre%_gridRes ==0) imin=0;
+    if(hashCentre% _gridRes == _gridRes-1) imax=0;
+
+    if(hashCentre/ _gridRes==0) jmax = 0;
+    if(hashCentre/ _gridRes== _gridRes-1) jmin=0;
+
+    for(int i = imin; i<=imax; ++i)
+    {
+        for(int j = jmin; j<=jmax; ++j)
+        {
+            if(i==0 && j==0) break;
+            unsigned int otherHash = (hashCentre+i)+j*_gridRes;
+            unsigned int startIndex = _d_scatterAdd[otherHash+1];
+            unsigned int howMany = _d_cellOcc[otherHash];
+
+            for(int otherid = startIndex; otherid<startIndex+howMany;++otherid)
+            {
+                float diffX = _P_x[otherid]-_P_x[idx];
+                float diffY = _P_y[otherid]-_P_y[idx];
+                float mag = sqrtf(diffX*diffX + diffY*diffY);
+                float q = mag / _iRadius;
+                if(q<1 && q!=0)
+                {
+                    float diffXnorm = diffX/mag;
+                    float diffYnorm = diffY/mag;
+                    float diffXV = _V_x[idx] - _V_x[otherid];
+                    float diffYV = _V_y[idx] - _V_y[otherid];
+                    float u = (diffXV*diffXnorm) + (diffYV*diffYnorm);
+                    if(u>0)
+                    {
+                        float sig = 0.05f;
+                        float bet = 0.1f;
+                        float h = (1-q)*(sig*u + bet*u*u)*_timestep;
+                        float impulseX = diffXnorm*h;
+                        float impulseY = diffYnorm*h;
+                        _V_x[idx]= _V_x[idx] + impulseX;
+                        _V_y[idx]= _V_y[idx] + impulseY;
+                    }
+                }
+            }
+        }
+    }
+}
+
+__global__ void density(unsigned int _N,
+                        unsigned int _gridRes,
+                        float _iRadius,
+                        float _timestep,
+                        float * _P_x,
+                        float * _P_y,
+                        float * _V_x,
+                        float * _V_y,
+                        unsigned int * _d_hash,
+                        unsigned int * _d_cellOcc,
+                        unsigned int * _d_scatterAdd)
+{
+    uint idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if(idx > _N) return;
+
+    unsigned int hashCentre =  _d_hash[idx];
+
+    unsigned int imin, imax, jmin, jmax;
+    if(hashCentre%_gridRes ==0) imin=0;
+    if(hashCentre% _gridRes == _gridRes-1) imax=0;
+
+    if(hashCentre/ _gridRes==0) jmax = 0;
+    if(hashCentre/ _gridRes== _gridRes-1) jmin=0;
+
+    float density = 0.0f;
+    float nearDensity = 0.0f;
+
+    for(int i = imin; i<=imax; ++i)
+    {
+        for(int j = jmin; j<=jmax; ++j)
+        {
+            if(i==0 && j==0) break;
+            unsigned int otherHash = (hashCentre+i)+j*_gridRes;
+            unsigned int startIndex = _d_scatterAdd[otherHash+1];
+            unsigned int howMany = _d_cellOcc[otherHash];
+
+            for(int otherid = startIndex; otherid<startIndex+howMany;++otherid)
+            {
+                float Rx = _P_x[otherid] - _P_x[idx];
+                float Ry = _P_y[otherid] - _P_y[idx];
+                float magR = sqrtf(Rx*Rx + Ry*Ry);
+                float q = magR / _iRadius;
+                if(q<1 && q!=0)
+                {
+                    density+=(1.0f-q)*(1.0f-q);
+                    nearDensity+=(1.0f-q)*(1.0f-q)*(1.0f-q);
+                }
+            }
+        }
+    }
+    float p0 = 5.0f;
+    float k = 0.004f;
+    float knear = 0.01f;
+
+    float P = k*(density - p0);
+    float Pnear = knear * nearDensity;
+
+    float dx = 0.0f;
+    float dy = 0.0f;
+    for(int i = imin; i<=imax; ++i)
+    {
+        for(int j = jmin; j<=jmax; ++j)
+        {
+            if(i==0 && j==0) break;
+            unsigned int otherHash = (hashCentre+i)+j*_gridRes;
+            unsigned int startIndex = _d_scatterAdd[otherHash+1];
+            unsigned int howMany = _d_cellOcc[otherHash];
+
+            for(int otherid = startIndex; otherid<startIndex+howMany;++otherid)
+            {
+                float Rx = _P_x[otherid] - _P_x[idx];
+                float Ry = _P_y[otherid] - _P_y[idx];
+                float magR = sqrtf(Rx*Rx + Ry*Ry);
+                float q = magR / _iRadius;
+                if(q<1 && q!=0)
+                {
+                    float Rxnorm = Rx / magR;
+                    float Rynorm = Ry / magR;
+                    float he = (_timestep*_timestep*(P*(1.0f-q))+Pnear*(1.0f-q)*(1.0f-q));
+                    float Dx = Rxnorm*he;
+                    float Dy = Rynorm*he;
+                    atomicAdd(&(_P_x[otherid]), Dx/2.0f);
+                    atomicAdd(&(_P_y[otherid]), Dy/2.0f);
+                    dx-=Dx/2.0f;
+                    dy-=Dy/2.0f;
+                }
+            }
+        }
+    }
+    atomicAdd(&(_P_x[idx]), dx);
+    atomicAdd(&(_P_y[idx]), dy);
+}
+
+__global__ void integrate(unsigned int _N,
+                          float _timestep,
+                          float * _P_x,
+                          float * _P_y,
+                          float * _V_x,
+                          float * _V_y)
+{
+    uint idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if(idx > _N) return;
+
+    _P_x[idx] = _V_x[idx] * _timestep;
+    _P_y[idx] = _V_y[idx] * _timestep;
+
+    // boundaries
+    if(_P_x[idx]<0.0f) _P_x[idx]=0.0f;
+    if(_P_x[idx]>1.0f) _P_x[idx]=1.0f;
+    if(_P_y[idx]<0.0f) _P_y[idx]=0.0f;
+    if(_P_y[idx]>1.0f) _P_y[idx]=1.0f;
+
+}
+
 
 void PP2_GPU::initData()
 {
@@ -95,8 +280,24 @@ void PP2_GPU::initData()
     d_Vx_ptr = thrust::raw_pointer_cast(&d_Vx[0]);
     d_Vy_ptr = thrust::raw_pointer_cast(&d_Vy[0]);
 
+    d_hash = thrust::device_vector<unsigned int>(m_numPoints);
+    d_cellOcc = thrust::device_vector<unsigned int>(m_gridResolution*m_gridResolution,0);
+    d_scatterAdd = thrust::device_vector<unsigned int>(m_gridResolution*m_gridResolution,0);
+
     d_hash_ptr = thrust::raw_pointer_cast(&d_hash[0]);
     d_cellOcc_ptr = thrust::raw_pointer_cast(&d_cellOcc[0]);
+    d_scatterAdd_ptr = thrust::raw_pointer_cast(&d_scatterAdd[0]);
+}
+
+void PP2_GPU::castPointers()
+{
+    d_Px_ptr = thrust::raw_pointer_cast(&d_Px[0]);
+    d_Py_ptr = thrust::raw_pointer_cast(&d_Py[0]);
+    d_Vx_ptr = thrust::raw_pointer_cast(&d_Vx[0]);
+    d_Vy_ptr = thrust::raw_pointer_cast(&d_Vy[0]);
+    d_hash_ptr = thrust::raw_pointer_cast(&d_hash[0]);
+    d_cellOcc_ptr = thrust::raw_pointer_cast(&d_cellOcc[0]);
+    d_scatterAdd_ptr = thrust::raw_pointer_cast(&d_scatterAdd[0]);
 }
 
 void PP2_GPU::hashOccSort()
@@ -104,11 +305,97 @@ void PP2_GPU::hashOccSort()
     unsigned int nThreads = 1024;
     unsigned int nBlocks = m_numPoints / nThreads + 1;
 
-//    pointHash2D<<<nBlocks, nThreads>>>(d_hash_ptr, d_Px_ptr, d_Py_ptr,
-//                                         m_numPoints,
-//                                         m_gridResolution);
+    castPointers();
 
-//    thrust::sort_by_key(d_hash.begin(), d_hash.end(),
+    pointHash2D<<<nBlocks, nThreads>>>(d_hash_ptr, d_Px_ptr, d_Py_ptr,
+                                         m_numPoints,
+                                         m_gridResolution);
+
+    cudaThreadSynchronize();
+
+
+    auto tuple = thrust::make_tuple( d_Px.begin(), d_Py.begin(), d_Vx.begin());
+    auto zippy = thrust::make_zip_iterator(tuple);
+
+    thrust::sort_by_key(d_hash.begin(), d_hash.end(), zippy);
 //                            thrust::make_zip_iterator(
-//                                thrust::make_tuple( d_Px.begin(), d_Py.begin(), d_Vx.begin(),d_Vy.begin())));
+//                                thrust::make_tuple( d_Px.begin(), d_Py.begin(), d_Vx.begin())));
+
+    cudaThreadSynchronize();
+
+    thrust::exclusive_scan(d_cellOcc.begin(),d_cellOcc.end(),d_scatterAdd.begin());
+
+    cudaThreadSynchronize();
+
+    countCellOccupancy<<<nBlocks, nThreads>>>(d_cellOcc_ptr, d_hash_ptr, d_cellOcc.size(), d_hash.size());
+
+    cudaThreadSynchronize();
+}
+
+void PP2_GPU::addParticle(float P_x, float P_y, float V_x, float V_y)
+{
+    d_Px.push_back(P_x);
+    d_Py.push_back(P_y);
+    d_Vx.push_back(V_x);
+    d_Vy.push_back(V_y);
+    m_numPoints++;
+}
+
+void PP2_GPU::simulate()
+{
+    if(m_rain)
+    {
+        addParticle(0.4f,1.0f,0.0f,0.0f);
+        addParticle(0.5f,1.0f,0.0f,0.0f);
+        addParticle(0.6f,1.0f,0.0f,0.0f);
+    }
+
+    if(m_gravity)
+    {
+        for(int i=0; i<m_numPoints; ++i)
+        {
+            d_Vy[i]+=-0.0098;
+        }
+    }
+
+    hashOccSort();
+
+    // ------------------------------VISCOSITY--------------------------------------------
+
+    unsigned int nThreads = 1024;
+    unsigned int nBlocks = m_numPoints / nThreads + 1;
+
+    viscosity<<<nBlocks,nThreads>>>(m_numPoints,
+                                    m_gridResolution,
+                                    m_interactionRadius,
+                                    m_timestep,
+                                    d_Px_ptr,
+                                    d_Py_ptr,
+                                    d_Vx_ptr,
+                                    d_Vy_ptr,
+                                    d_hash_ptr,
+                                    d_cellOcc_ptr,
+                                    d_scatterAdd_ptr);
+
+    cudaThreadSynchronize();
+
+    integrate<<<nBlocks,nThreads>>>(m_numPoints,
+                                    m_timestep,
+                                    d_Px_ptr,
+                                    d_Py_ptr,
+                                    d_Vx_ptr,
+                                    d_Vy_ptr);
+
+    cudaThreadSynchronize();
+
+
+//    GLfloat _sigma=0.05f,
+//    GLfloat _beta=0.1f,
+//    GLfloat _gamma=0.004f,
+//    GLfloat _alpha=0.3f,
+//    GLfloat _knear=0.01f,
+//    GLfloat _k=0.004f,
+//    GLfloat _kspring=0.3f,
+//    GLfloat _p0=5.0f,
+
 }
