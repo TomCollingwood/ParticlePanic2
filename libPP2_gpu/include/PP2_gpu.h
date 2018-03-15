@@ -17,10 +17,14 @@
 namespace PP2_GPU {
     thrust::device_vector<float> d_Px;
     thrust::device_vector<float> d_Py;
+    thrust::device_vector<float> d_prevPx;
+    thrust::device_vector<float> d_prevPy;
     thrust::device_vector<float> d_Vx;
     thrust::device_vector<float> d_Vy;
     float * d_Px_ptr;
     float * d_Py_ptr;
+    float * d_prevPx_ptr;
+    float * d_prevPy_ptr;
     float * d_Vx_ptr;
     float * d_Vy_ptr;
 

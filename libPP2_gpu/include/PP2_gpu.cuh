@@ -30,6 +30,8 @@ __global__ void integrate(unsigned int _N,
                           float _timestep,
                           float * _P_x,
                           float * _P_y,
+                          float * _prevP_x,
+                          float * _prevP_y,
                           float * _V_x,
                           float * _V_y);
 
@@ -44,3 +46,14 @@ __global__ void density(unsigned int _N,
                         unsigned int * _d_hash,
                         unsigned int * _d_cellOcc,
                         unsigned int * _d_scatterAdd);
+
+__global__ void setNewVelocity(unsigned int _N,
+                               float _timestep,
+                               float * _P_x,
+                               float * _P_y,
+                               float * _prevP_x,
+                               float * _prevP_y,
+                               float * _V_x,
+                               float * _V_y);
+
+

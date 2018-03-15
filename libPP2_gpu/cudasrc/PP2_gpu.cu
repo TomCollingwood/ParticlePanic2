@@ -250,11 +250,16 @@ __global__ void integrate(unsigned int _N,
                           float _timestep,
                           float * _P_x,
                           float * _P_y,
+                          float * _prevP_x,
+                          float * _prevP_y,
                           float * _V_x,
                           float * _V_y)
 {
     uint idx = blockIdx.x * blockDim.x + threadIdx.x;
     if(idx > _N) return;
+
+    _prevP_x[idx] = _P_x[idx];
+    _prevP_y[idx] = _P_y[idx];
 
     _P_x[idx] = _V_x[idx] * _timestep;
     _P_y[idx] = _V_y[idx] * _timestep;
@@ -267,6 +272,24 @@ __global__ void integrate(unsigned int _N,
 
 }
 
+__global__ void setNewVelocity(unsigned int _N,
+                               float _timestep,
+                               float * _P_x,
+                               float * _P_y,
+                               float * _prevP_x,
+                               float * _prevP_y,
+                               float * _V_x,
+                               float * _V_y)
+{
+    uint idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if(idx > _N) return;
+
+    _V_x[idx] = (_P_x[idx] - _prevP_x[idx])/_timestep;
+    _V_y[idx] = (_P_y[idx] - _prevP_y[idx])/_timestep;
+
+}
+
+
 
 void PP2_GPU::initData()
 {
@@ -274,6 +297,11 @@ void PP2_GPU::initData()
     d_Py = thrust::device_vector<float>();
     d_Px_ptr = thrust::raw_pointer_cast(&d_Px[0]);
     d_Py_ptr = thrust::raw_pointer_cast(&d_Py[0]);
+
+    d_prevPx = thrust::device_vector<float>();
+    d_prevPy = thrust::device_vector<float>();
+    d_prevPx_ptr = thrust::raw_pointer_cast(&d_Px[0]);
+    d_prevPy_ptr = thrust::raw_pointer_cast(&d_Py[0]);
 
     d_Vx = thrust::device_vector<float>();
     d_Vy = thrust::device_vector<float>();
@@ -293,6 +321,8 @@ void PP2_GPU::castPointers()
 {
     d_Px_ptr = thrust::raw_pointer_cast(&d_Px[0]);
     d_Py_ptr = thrust::raw_pointer_cast(&d_Py[0]);
+    d_prevPx_ptr = thrust::raw_pointer_cast(&d_prevPx[0]);
+    d_prevPy_ptr = thrust::raw_pointer_cast(&d_prevPy[0]);
     d_Vx_ptr = thrust::raw_pointer_cast(&d_Vx[0]);
     d_Vy_ptr = thrust::raw_pointer_cast(&d_Vy[0]);
     d_hash_ptr = thrust::raw_pointer_cast(&d_hash[0]);
@@ -383,19 +413,37 @@ void PP2_GPU::simulate()
                                     m_timestep,
                                     d_Px_ptr,
                                     d_Py_ptr,
+                                    d_prevPx_ptr,
+                                    d_prevPy_ptr,
                                     d_Vx_ptr,
                                     d_Vy_ptr);
 
     cudaThreadSynchronize();
 
+    density<<<nBlocks,nThreads>>>(m_numPoints,
+                                  m_gridResolution,
+                                  m_interactionRadius,
+                                  m_timestep,
+                                  d_Px_ptr,
+                                  d_Py_ptr,
+                                  d_Vx_ptr,
+                                  d_Vy_ptr,
+                                  d_hash_ptr,
+                                  d_cellOcc_ptr,
+                                  d_scatterAdd_ptr); 
 
-//    GLfloat _sigma=0.05f,
-//    GLfloat _beta=0.1f,
-//    GLfloat _gamma=0.004f,
-//    GLfloat _alpha=0.3f,
-//    GLfloat _knear=0.01f,
-//    GLfloat _k=0.004f,
-//    GLfloat _kspring=0.3f,
-//    GLfloat _p0=5.0f,
+    cudaThreadSynchronize();
+
+    setNewVelocity<<<nBlocks,nThreads>>>(m_numPoints,
+                                         m_timestep,
+                                         d_Px_ptr,
+                                         d_Py_ptr,
+                                         d_prevPx_ptr,
+                                         d_prevPy_ptr,
+                                         d_Vx_ptr,
+                                         d_Vy_ptr);
+
+    cudaThreadSynchronize();
+
 
 }
