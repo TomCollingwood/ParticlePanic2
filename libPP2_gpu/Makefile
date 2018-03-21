@@ -39,7 +39,7 @@ DISTNAME      = PP2_gpu1.0.0
 DISTDIR = /home/i7449874/Documents/GitHubStuff/ParticlePanic2/libPP2_gpu/obj/PP2_gpu1.0.0
 LINK          = g++
 LFLAGS        = -Wl,-rpath,/opt/Qt5.9.0/5.9/gcc_64/lib -shared -Wl,-soname,libPP2_gpu.so.1
-LIBS          = $(SUBLIBS) -L${CUDA_PATH}/lib64 -L${CUDA_PATH}/lib64/nvidia -lcudadevrt -lcuda -lcudart -lcurand -L/opt/Qt5.9.0/5.9/gcc_64/lib -lQt5Gui -lQt5Core -lGL -lpthread 
+LIBS          = $(SUBLIBS) -L${CUDA_PATH}/lib64 -L${CUDA_PATH}/lib64/nvidia -lcuda -lcudart -lcudadevrt -lcurand -L/opt/Qt5.9.0/5.9/gcc_64/lib -lQt5Gui -lQt5Core -lGL -lpthread 
 AR            = ar cqs
 RANLIB        = 
 SED           = sed
@@ -536,13 +536,13 @@ compiler_cuda_make_all: cudaobj/PP2_gpu.o
 compiler_cuda_clean:
 	-$(DEL_FILE) cudaobj/*.o
 cudaobj/PP2_gpu.o: cudasrc/PP2_gpu.cu
-	${CUDA_PATH}/bin/nvcc -ccbin /usr/bin/g++ -m64 -g -G -gencode arch=compute_${CUDA_ARCH},code=sm_${CUDA_ARCH} --compiler-options -fno-strict-aliasing --compiler-options -fPIC -use_fast_math --std=c++11 -dc -I./include -I${CUDA_PATH}/include -I${CUDA_PATH}/include/cuda -I${CUDA_PATH}/samples/common/inc  -L${CUDA_PATH}/lib64 -L${CUDA_PATH}/lib64/nvidia -lcudadevrt -lcuda -lcudart -lcurand cudasrc/PP2_gpu.cu -o cudaobj/PP2_gpu.o
+	${CUDA_PATH}/bin/nvcc -ccbin /usr/bin/g++ -m64 -g -G -gencode arch=compute_50,code=sm_50 -gencode arch=compute_30,code=sm_30 -gencode arch=compute_35,code=sm_35 -gencode arch=compute_${CUDA_ARCH},code=sm_${CUDA_ARCH} --compiler-options -fno-strict-aliasing --compiler-options -fPIC -use_fast_math --std=c++11 -dc -I./include -I${CUDA_PATH}/include -I${CUDA_PATH}/include/cuda -I${CUDA_PATH}/samples/common/inc  -L${CUDA_PATH}/lib64 -L${CUDA_PATH}/lib64/nvidia -lcuda -lcudart -lcudadevrt -lcurand cudasrc/PP2_gpu.cu -o cudaobj/PP2_gpu.o
 
 compiler_cudalink_make_all: obj/cuda_link.o
 compiler_cudalink_clean:
 	-$(DEL_FILE) obj/cuda_link.o
 obj/cuda_link.o: cudaobj/PP2_gpu.o 
-	${CUDA_PATH}/bin/nvcc -ccbin /usr/bin/g++ -m64 -g -G -gencode arch=compute_${CUDA_ARCH},code=sm_${CUDA_ARCH} --compiler-options -fno-strict-aliasing --compiler-options -fPIC -use_fast_math --std=c++11 -I./include -I${CUDA_PATH}/include -I${CUDA_PATH}/include/cuda -I${CUDA_PATH}/samples/common/inc  -dlink cudaobj/PP2_gpu.o -o obj/cuda_link.o
+	${CUDA_PATH}/bin/nvcc -ccbin /usr/bin/g++ -m64 -g -G -gencode arch=compute_50,code=sm_50 -gencode arch=compute_30,code=sm_30 -gencode arch=compute_35,code=sm_35 -gencode arch=compute_${CUDA_ARCH},code=sm_${CUDA_ARCH} --compiler-options -fno-strict-aliasing --compiler-options -fPIC -use_fast_math --std=c++11 -I./include -I${CUDA_PATH}/include -I${CUDA_PATH}/include/cuda -I${CUDA_PATH}/samples/common/inc  -dlink cudaobj/PP2_gpu.o -o obj/cuda_link.o -L${CUDA_PATH}/lib64 -L${CUDA_PATH}/lib64/nvidia -lcuda -lcudart -lcudadevrt -lcurand
 
 compiler_rcc_make_all:
 compiler_rcc_clean:

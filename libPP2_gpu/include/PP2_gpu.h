@@ -3,24 +3,14 @@
 
 #include <iostream>
 
-// For the CUDA runtime routines (prefixed with "cuda_")
-#include <cuda_runtime.h>
-#include <cuda.h>
-#include <cuda_runtime_api.h>
-#include <device_functions.h>
-#include <thrust/device_vector.h>
+
 #include <vector>
 
 // Needed for output functions within the kernel
 #include <stdio.h>
 
 namespace PP2_GPU {
-    thrust::device_vector<float> d_Px;
-    thrust::device_vector<float> d_Py;
-    thrust::device_vector<float> d_prevPx;
-    thrust::device_vector<float> d_prevPy;
-    thrust::device_vector<float> d_Vx;
-    thrust::device_vector<float> d_Vy;
+
     float * d_Px_ptr;
     float * d_Py_ptr;
     float * d_prevPx_ptr;
@@ -32,10 +22,8 @@ namespace PP2_GPU {
     int m_gridResolution = 4;
     float m_interactionRadius = 0.05f;
     float m_timestep = 1.0f;
+    bool m_started = false;
 
-    thrust::device_vector<unsigned int> d_cellOcc;
-    thrust::device_vector<unsigned int> d_hash;
-    thrust::device_vector<unsigned int> d_scatterAdd;
 
     unsigned int * d_hash_ptr;
     unsigned int * d_cellOcc_ptr;
@@ -51,13 +39,13 @@ namespace PP2_GPU {
 
     void simulate();
 
-    void getSurroundingParticles(unsigned int hashIndex,
-                                 thrust::device_vector<unsigned int> d_result );
+    int getNumPoints();
 
+    void clearMem();
 
     //--------------- INPUTS-------------------------
 
-    bool m_rain;
+    bool m_rain = true;
     bool m_gravity;
 
 }

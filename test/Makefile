@@ -15,7 +15,7 @@ CXX           = g++
 DEFINES       = -DQT_QML_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB
 CFLAGS        = -pipe -g -Wall -W -D_REENTRANT -fPIC $(DEFINES)
 CXXFLAGS      = -pipe -std=c++11 -Wall -Wextra -pedantic -g -std=gnu++11 -Wall -W -D_REENTRANT -fPIC $(DEFINES)
-INCPATH       = -I. -I../libPP2_cpu/include -isystem /usr/include/libdrm -I/opt/Qt5.9.0/5.9/gcc_64/include -I/opt/Qt5.9.0/5.9/gcc_64/include/QtGui -I/opt/Qt5.9.0/5.9/gcc_64/include/QtCore -I. -I/opt/Qt5.9.0/5.9/gcc_64/mkspecs/linux-g++
+INCPATH       = -I. -I../include -isystem /usr/include/libdrm -I/opt/Qt5.9.0/5.9/gcc_64/include -I/opt/Qt5.9.0/5.9/gcc_64/include/QtGui -I/opt/Qt5.9.0/5.9/gcc_64/include/QtCore -I. -I/opt/Qt5.9.0/5.9/gcc_64/mkspecs/linux-g++
 QMAKE         = /opt/Qt5.9.0/5.9/gcc_64/bin/qmake
 DEL_FILE      = rm -f
 CHK_DIR_EXISTS= test -d
@@ -39,7 +39,7 @@ DISTNAME      = test1.0.0
 DISTDIR = /home/i7449874/Documents/GitHubStuff/ParticlePanic2/test/obj/test1.0.0
 LINK          = g++
 LFLAGS        = -Wl,-rpath,/opt/Qt5.9.0/5.9/gcc_64/lib
-LIBS          = $(SUBLIBS) -L/usr/local/lib -L../lib -lPP2_cpu -lPP2_gpu -Wl,-rpath,/usr/local/lib -lSDL2 -lGLU -lSDL2_image -L/usr/local/lib/ -lGL -L/opt/Qt5.9.0/5.9/gcc_64/lib -lQt5Gui -lQt5Core -lpthread 
+LIBS          = $(SUBLIBS) -L/usr/local/lib -L../lib -L -lPP2_cpu -lPP2_gpu -Wl,-rpath,/usr/local/lib -lSDL2 -lGLU -lSDL2_image -L/usr/local/lib/ -lGL -L/opt/Qt5.9.0/5.9/gcc_64/lib -lQt5Gui -lQt5Core -lpthread 
 AR            = ar cqs
 RANLIB        = 
 SED           = sed
@@ -675,22 +675,23 @@ compiler_clean: compiler_moc_predefs_clean
 ####### Compile
 
 obj/Toolbar.o: src/Toolbar.cpp include/Toolbar.h \
-		../libPP2_cpu/include/World_cpu.h \
-		../libPP2_cpu/include/Vec3_cpu.h \
-		../libPP2_cpu/include/Mat3_cpu.h \
-		../libPP2_cpu/include/Particle_cpu.h \
-		../libPP2_cpu/include/ParticleProperties_cpu.h \
-		../libPP2_cpu/include/MarchingAlgorithms_cpu.h
+		../include/World_cpu.h \
+		../include/Vec3_cpu.h \
+		../include/Mat3_cpu.h \
+		../include/Particle_cpu.h \
+		../include/ParticleProperties_cpu.h \
+		../include/MarchingAlgorithms_cpu.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o obj/Toolbar.o src/Toolbar.cpp
 
 obj/Main.o: src/Main.cpp include/Toolbar.h \
-		../libPP2_cpu/include/World_cpu.h \
-		../libPP2_cpu/include/Vec3_cpu.h \
-		../libPP2_cpu/include/Mat3_cpu.h \
-		../libPP2_cpu/include/Particle_cpu.h \
-		../libPP2_cpu/include/ParticleProperties_cpu.h \
-		../libPP2_cpu/include/MarchingAlgorithms_cpu.h \
-		include/Commands.h
+		../include/World_cpu.h \
+		../include/Vec3_cpu.h \
+		../include/Mat3_cpu.h \
+		../include/Particle_cpu.h \
+		../include/ParticleProperties_cpu.h \
+		../include/MarchingAlgorithms_cpu.h \
+		include/Commands.h \
+		../include/PP2_gpu.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o obj/Main.o src/Main.cpp
 
 ####### Install

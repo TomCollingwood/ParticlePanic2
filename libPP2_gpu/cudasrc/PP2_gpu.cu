@@ -146,6 +146,10 @@ __global__ void viscosity(unsigned int _N,
                         float impulseY = diffYnorm*h;
                         _V_x[idx]= _V_x[idx] + impulseX;
                         _V_y[idx]= _V_y[idx] + impulseY;
+                        atomicAdd(&(_V_x[idx]),-impulseX);
+                        atomicAdd(&(_V_y[idx]),-impulseY);
+                        atomicAdd(&(_V_x[otherid]),impulseX);
+                        atomicAdd(&(_V_y[otherid]),impulseY);
                     }
                 }
             }
@@ -332,6 +336,8 @@ void PP2_GPU::castPointers()
 
 void PP2_GPU::hashOccSort()
 {
+
+    if(m_numPoints==0) return;
     unsigned int nThreads = 1024;
     unsigned int nBlocks = m_numPoints / nThreads + 1;
 
@@ -343,13 +349,9 @@ void PP2_GPU::hashOccSort()
 
     cudaThreadSynchronize();
 
-
-    auto tuple = thrust::make_tuple( d_Px.begin(), d_Py.begin(), d_Vx.begin());
+    auto tuple = thrust::make_tuple( d_Px.begin(), d_Py.begin(), d_Vx.begin(), d_Vy.begin(), d_prevPx.begin(), d_prevPy.begin());
     auto zippy = thrust::make_zip_iterator(tuple);
-
     thrust::sort_by_key(d_hash.begin(), d_hash.end(), zippy);
-//                            thrust::make_zip_iterator(
-//                                thrust::make_tuple( d_Px.begin(), d_Py.begin(), d_Vx.begin())));
 
     cudaThreadSynchronize();
 
@@ -368,17 +370,27 @@ void PP2_GPU::addParticle(float P_x, float P_y, float V_x, float V_y)
     d_Py.push_back(P_y);
     d_Vx.push_back(V_x);
     d_Vy.push_back(V_y);
+    d_prevPx.push_back(P_x);
+    d_prevPy.push_back(P_y);
+    d_hash.push_back(0);
     m_numPoints++;
 }
 
 void PP2_GPU::simulate()
 {
-    if(m_rain)
+    if(!m_started)
     {
-        addParticle(0.4f,1.0f,0.0f,0.0f);
-        addParticle(0.5f,1.0f,0.0f,0.0f);
-        addParticle(0.6f,1.0f,0.0f,0.0f);
+        for(int i = 0; i< 20; ++i)
+        {
+            for(int j = 0; j<20 ; ++j)
+            {
+                addParticle(0.05f+i*0.05f,1.0f-0.05f*j,0.0f,0.0f);
+            }
+        }
+        m_started =true;
     }
+
+    castPointers();
 
     if(m_gravity)
     {
@@ -445,5 +457,31 @@ void PP2_GPU::simulate()
 
     cudaThreadSynchronize();
 
+}
 
+int PP2_GPU::getNumPoints()
+{
+    return m_numPoints;
+}
+
+void PP2_GPU::clearMem()
+{
+    d_Px.clear();
+    thrust::device_vector<float>().swap(d_Px);
+    d_Py.clear();
+    thrust::device_vector<float>().swap(d_Py);
+    d_prevPx.clear();
+    thrust::device_vector<float>().swap(d_prevPx);
+    d_prevPy.clear();
+    thrust::device_vector<float>().swap(d_prevPy);
+    d_Vx.clear();
+    thrust::device_vector<float>().swap(d_Vx);
+    d_Vy.clear();
+    thrust::device_vector<float>().swap(d_Vy);
+    d_cellOcc.clear();
+    thrust::device_vector<unsigned int>().swap(d_cellOcc);
+    d_hash.clear();
+    thrust::device_vector<unsigned int>().swap(d_hash);
+    d_scatterAdd.clear();
+    thrust::device_vector<unsigned int>().swap(d_scatterAdd);
 }

@@ -29,8 +29,12 @@
 //#include "Particle.h"
 //#include "World.h"
 
+#include <sys/time.h>
+
 #include "include/Toolbar.h"
 #include "include/Commands.h"
+
+#include "PP2_gpu.h"
 
 
 
@@ -190,6 +194,43 @@ int main( int argc, char* args[] ) {
 
     //Enable text input
     SDL_StartTextInput();
+
+
+//    struct timeval tim;
+//    double before, after;
+
+//    PP2_GPU::initData();
+
+//    gettimeofday(&tim, NULL);
+//    before=tim.tv_sec+(tim.tv_usec * 1e-6);
+//    PP2_GPU::simulate();
+//    gettimeofday(&tim, NULL);
+//    after=tim.tv_sec+(tim.tv_usec * 1e-6);
+//    double Time = after - before;
+//    int test;
+//    test = PP2_GPU::getNumPoints();
+//    std::cout<<"Number of points: "<<test<<" Time: "<<Time<<std::endl;
+
+//    gettimeofday(&tim, NULL);
+//    before=tim.tv_sec+(tim.tv_usec * 1e-6);
+//    PP2_GPU::simulate();
+//    gettimeofday(&tim, NULL);
+//    after=tim.tv_sec+(tim.tv_usec * 1e-6);
+//    Time = after - before;
+//    test = PP2_GPU::getNumPoints();
+//    std::cout<<"Number of points: "<<test<<" Time: "<<Time<<std::endl;
+
+
+//    gettimeofday(&tim, NULL);
+//    before=tim.tv_sec+(tim.tv_usec * 1e-6);
+//    PP2_GPU::simulate();
+//    gettimeofday(&tim, NULL);
+//    after=tim.tv_sec+(tim.tv_usec * 1e-6);
+//    Time = after - before;
+//    test = PP2_GPU::getNumPoints();
+//    std::cout<<"Number of points: "<<test<<" Time: "<<Time<<std::endl;
+
+//    PP2_GPU::clearMem();
 
     //While application is running
     while( !quit )
@@ -401,7 +442,7 @@ int main( int argc, char* args[] ) {
           SDL_GL_SwapWindow( gWindow );
         }
     }
-
+    // */
     //Disable text input
     SDL_StopTextInput();
 

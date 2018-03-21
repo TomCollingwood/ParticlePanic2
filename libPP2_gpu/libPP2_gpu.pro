@@ -34,7 +34,7 @@ SOURCES += src/*.cpp
 #                                                         -lcudart_static
 
 # Link with the following libraries
-LIBS += -L${CUDA_PATH}/lib64 -L${CUDA_PATH}/lib64/nvidia -lcudadevrt -lcuda -lcudart -lcurand
+LIBS += -L${CUDA_PATH}/lib64 -L${CUDA_PATH}/lib64/nvidia -lcuda -lcudart -lcudadevrt -lcurand
 
 
 # CUDA_COMPUTE_ARCH - This will enable nvcc to compiler appropriate architecture specific code for different compute versions
@@ -61,7 +61,7 @@ CUDA_SOURCES += cudasrc/*.cu
 CUDA_INC+= $$join(INCLUDEPATH,' -I','-I',' ')
 
 # nvcc flags (ptxas option verbose is always useful)
-NVCCFLAGS = -ccbin $$HOST_COMPILER -m64 -g -G -gencode arch=compute_$$CUDA_COMPUTE_ARCH,code=sm_$$CUDA_COMPUTE_ARCH --compiler-options -fno-strict-aliasing --compiler-options -fPIC -use_fast_math --std=c++11 #--ptxas-options=-v
+NVCCFLAGS = -ccbin $$HOST_COMPILER -m64 -g -G -gencode arch=compute_50,code=sm_50 -gencode arch=compute_30,code=sm_30 -gencode arch=compute_35,code=sm_35 -gencode arch=compute_$$CUDA_COMPUTE_ARCH,code=sm_$$CUDA_COMPUTE_ARCH --compiler-options -fno-strict-aliasing --compiler-options -fPIC -use_fast_math --std=c++11 #--ptxas-options=-v
 
 # Define the path and binary for nvcc
 NVCCBIN = $$CUDA_DIR/bin/nvcc
@@ -86,7 +86,7 @@ cudalink.CONFIG = combine
 cudalink.output = $$OBJECTS_DIR/cuda_link.o
 
 # Tweak arch according to your hw's compute capability
-cudalink.commands = $$NVCCBIN $$NVCCFLAGS $$CUDA_INC -dlink ${QMAKE_FILE_NAME} -o ${QMAKE_FILE_OUT}
+cudalink.commands = $$NVCCBIN $$NVCCFLAGS $$CUDA_INC -dlink ${QMAKE_FILE_NAME} -o ${QMAKE_FILE_OUT} -L${CUDA_PATH}/lib64 -L${CUDA_PATH}/lib64/nvidia -lcuda -lcudart -lcudadevrt -lcurand
 cudalink.dependency_type = TYPE_C
 cudalink.depend_command = $$NVCCBIN $$NVCCFLAGS -M $$CUDA_INC ${QMAKE_FILE_NAME}
 
