@@ -762,7 +762,7 @@ void Toolbar::pressCamera()
   toggleBool(&m_camera);
 }
 
-void Toolbar::setWorld(World *_world)
+void Toolbar::setWorld(WorldCPU *_world)
 {
   m_world=_world;
 }

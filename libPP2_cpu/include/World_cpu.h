@@ -37,14 +37,14 @@
 /**
  * @brief The Scene class
  */
-class World
+class WorldCPU
 {
 public:
     /// A constructor, called when this class is instanced in the form of an object
-    World();
+    WorldCPU();
 
     /// A virtual destructor, in case we want to inherit from this class
-    ~World();
+    ~WorldCPU();
 
     //----------------------------------------------------------------------------------------------------------------------
     /// \brief init Initialises the scene, called before render().

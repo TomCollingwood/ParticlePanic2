@@ -46,7 +46,7 @@ int WIDTH = 900;
 int HEIGHT = 600;
 
 // Our World, which will store all the GL stuff
-World *world = NULL;
+WorldCPU *world = NULL;
 Toolbar *toolbar = NULL;
 
 //The window we'll be rendering to
@@ -163,7 +163,7 @@ int main( int argc, char* args[] ) {
 
     // We should now be ready to use OpenGL
     // This object holds our World. It needs to be initialised before it can be drawn.
-    world = new World();
+    world = new WorldCPU();
 
     toolbar = new Toolbar();
     toolbar->setWorld(world);

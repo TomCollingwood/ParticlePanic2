@@ -4,7 +4,7 @@
 
 #include "include/World_cpu.h"
 
-World::World() :
+WorldCPU::WorldCPU() :
   m_isInit(false),
   m_startTime(0.0),
   m_elapsedTime(0.0),
@@ -29,10 +29,10 @@ World::World() :
 {
 }
 
-World::~World() {
+WorldCPU::~WorldCPU() {
 }
 
-void World::init() {
+void WorldCPU::init() {
 
   if (m_isInit) return;
 
@@ -92,7 +92,7 @@ void World::init() {
   m_isInit = true;
 }
 
-void World::resizeWorld(int w, int h)
+void WorldCPU::resizeWorld(int w, int h)
 {
   // I have to clear world otherwise will crash when marching cubes are being rendered
   clearWorld();
@@ -137,7 +137,7 @@ void World::resizeWorld(int w, int h)
 
 }
 
-void World::resizeWindow(int w, int h) {
+void WorldCPU::resizeWindow(int w, int h) {
 
   m_howmanytimesrandomized=0;
   if (!m_isInit) return;
@@ -166,7 +166,7 @@ void World::resizeWindow(int w, int h) {
 
   }
 
-void World::draw() {
+void WorldCPU::draw() {
   if (!m_isInit) return;
 
   glMatrixMode(GL_MODELVIEW);
@@ -252,7 +252,7 @@ void World::draw() {
   if(current_3d) glPopMatrix();
 }
 
-void World::update(bool *updateinprogress) {
+void WorldCPU::update(bool *updateinprogress) {
   if (!m_isInit) return;
   *updateinprogress = true;
 
@@ -707,7 +707,7 @@ void World::update(bool *updateinprogress) {
 
 //---------------------------------HASH FUNCTIONS--------------------------------------------------------
 
-void World::hashParticles()
+void WorldCPU::hashParticles()
 {
   int gridSize;
   if(!m_3d) gridSize = m_gridwidth*m_gridheight;
@@ -751,7 +751,7 @@ void World::hashParticles()
   }
 }
 
-std::vector<Particle *> World::getSurroundingParticles(int thiscell, int numsur, bool dragselect) const
+std::vector<Particle *> WorldCPU::getSurroundingParticles(int thiscell, int numsur, bool dragselect) const
 {
   int numSurrounding=1;
   std::vector<Particle *> surroundingParticles;
@@ -800,7 +800,7 @@ std::vector<Particle *> World::getSurroundingParticles(int thiscell, int numsur,
 //---------------------------------GRID FUNCTIONS--------------------------------------------------------
 
 
-Vec3 World::getGridColumnRow(int k)
+Vec3 WorldCPU::getGridColumnRow(int k)
 {
   int row = floor(k/m_gridwidth);
   int column = k - row*m_gridwidth;
@@ -809,7 +809,7 @@ Vec3 World::getGridColumnRow(int k)
 
 //--------------------------------INPUT FUNCTIONS---------------------------------------------------
 
-void World::mouseDraw(int x, int y)
+void WorldCPU::mouseDraw(int x, int y)
 {
   float objectdensity=0.1f;
   if(m_drawwall) objectdensity=0.05f;
@@ -854,7 +854,7 @@ void World::mouseDraw(int x, int y)
   }
 }
 
-void World::mouseDrag(int _x, int _y)
+void WorldCPU::mouseDrag(int _x, int _y)
 {
   if(m_previousmousex>0 && m_previousmousey>0)
   {
@@ -872,7 +872,7 @@ void World::mouseDrag(int _x, int _y)
   m_previousmousey=_y;
 }
 
-void World::selectDraggedParticles(int _x, int _y)
+void WorldCPU::selectDraggedParticles(int _x, int _y)
 {
   // find OpenGL coordinates from window coordinates
   float worldx = ((float)_x/(float)m_pixelwidth)*(m_halfwidth*2) - m_halfwidth;
@@ -891,7 +891,7 @@ void World::selectDraggedParticles(int _x, int _y)
   m_previousmousey=_y;
 }
 
-void World::getbackhere(Particle * p)
+void WorldCPU::getbackhere(Particle * p)
 {
   if(p->getPosition()[0]>m_halfwidth-0.5f) p->getPosition()[0]=m_halfwidth-0.5f;
   else if(p->getPosition()[0]<-m_halfwidth+0.5f) p->getPosition()[0]=-m_halfwidth+0.5f;
@@ -899,7 +899,7 @@ void World::getbackhere(Particle * p)
   else if(p->getPosition()[1]<-m_halfheight+0.5f) p->getPosition()[1]=-m_halfheight+0.5f;
 }
 
-void World::mouseDragEnd(int _x, int _y)
+void WorldCPU::mouseDragEnd(int _x, int _y)
 {
   Vec3 newVelocity = Vec3(_x-m_previousmousex,m_previousmousey-_y);
 
@@ -913,7 +913,7 @@ void World::mouseDragEnd(int _x, int _y)
   m_previousmousey=-10;
 }
 
-void World::handleKeys(char _input)
+void WorldCPU::handleKeys(char _input)
 {
   switch(_input)
   {
@@ -979,7 +979,7 @@ void World::handleKeys(char _input)
   }
 }
 
-void World::mouseErase(int x, int y)
+void WorldCPU::mouseErase(int x, int y)
 {
   hashParticles();
   float worldx = ((float)x/(float)m_pixelwidth)*(m_halfwidth*2) - m_halfwidth;
@@ -1004,7 +1004,7 @@ void World::mouseErase(int x, int y)
 
 //------------------------PARTICLES FUNCTIONS-------------------------------------
 
-void World::insertParticle(Particle particle)
+void WorldCPU::insertParticle(Particle particle)
 {
   if(m_firstFreeParticle<m_particlesPoolSize-1)
   {
@@ -1025,7 +1025,7 @@ void World::insertParticle(Particle particle)
   }
 }
 
-void World::deleteParticle(int p)
+void WorldCPU::deleteParticle(int p)
 {
   m_particles[p].setAlive(false);
   for(auto& i : m_particles[p].m_particleSprings)
@@ -1044,7 +1044,7 @@ void World::deleteParticle(int p)
   --m_howManyAliveParticles;
 }
 
-void World::defragParticles()
+void WorldCPU::defragParticles()
 {
   for(int i=m_lastTakenParticle; i>m_firstFreeParticle; --i)
   {
@@ -1063,7 +1063,7 @@ void World::defragParticles()
 
 //-------------------------SPRING FUNCTIONS----------------------------------------
 
-int World::insertSpring(Particle::Spring spring)
+int WorldCPU::insertSpring(Particle::Spring spring)
 {
 
   if(m_firstFreeSpring<m_springsize-1)
@@ -1089,7 +1089,7 @@ int World::insertSpring(Particle::Spring spring)
   }
 }
 
-void World::deleteSpring(int s)
+void WorldCPU::deleteSpring(int s)
 {
   m_springs[s].alive=false;
   m_particles[m_springs[s].indexi].updateSpringIndex(s,-1);
@@ -1104,7 +1104,7 @@ void World::deleteSpring(int s)
   if(m_firstFreeSpring>s) m_firstFreeSpring=s;
 }
 
-void World::defragSprings()
+void WorldCPU::defragSprings()
 {
   for(int i=m_lastTakenSpring; i>m_firstFreeSpring; --i)
   {
@@ -1119,23 +1119,23 @@ void World::defragSprings()
 }
 //-------------------------GETTERS------------------------------
 
-float World::getHalfHeight() const
+float WorldCPU::getHalfHeight() const
 {
   return m_halfheight;
 }
 
-float World::getHalfWidth() const
+float WorldCPU::getHalfWidth() const
 {
   return m_halfwidth;
 }
 
-void World::toggleRain()
+void WorldCPU::toggleRain()
 {
   if(m_rain) m_rain=false;
   else m_rain=true;
 }
 
-void World::clearWorld()
+void WorldCPU::clearWorld()
 {
   if(m_lastTakenParticle<0) m_lastTakenParticle=0;
   for(int i=0; i<m_lastTakenParticle+1; ++i)
@@ -1147,13 +1147,13 @@ void World::clearWorld()
   hashParticles();
 }
 
-void World::toggleGravity()
+void WorldCPU::toggleGravity()
 {
   if(m_gravity) m_gravity=false;
   else m_gravity=true;
 }
 
-void World::drawWith(int type)
+void WorldCPU::drawWith(int type)
 {
   if(type==0)
   {
@@ -1168,7 +1168,7 @@ void World::drawWith(int type)
 
 //--------------------------3D STUFF ------------------------------------------------
 
-void World::mouseMove(const int &x, const int &y, bool leftclick) {
+void WorldCPU::mouseMove(const int &x, const int &y, bool leftclick) {
   if(m_3d)
   {
     // only called when clicked
@@ -1187,7 +1187,7 @@ void World::mouseMove(const int &x, const int &y, bool leftclick) {
   }
 }
 
-std::vector<std::vector<float>> World::renderGrid(ParticleProperties *p)
+std::vector<std::vector<float>> WorldCPU::renderGrid(ParticleProperties *p)
 {
   std::vector<std::vector<float>> rendergrid;
   rendergrid.clear();
@@ -1230,28 +1230,28 @@ std::vector<std::vector<float>> World::renderGrid(ParticleProperties *p)
   return rendergrid;
 }
 
-void World::set3D(bool b)
+void WorldCPU::set3D(bool b)
 {
   m_3d=b;
 }
 
-bool World::get3D()
+bool WorldCPU::get3D()
 {
   return m_3d;
 }
 
-void World::setToDraw(int _todraw)
+void WorldCPU::setToDraw(int _todraw)
 {
   if(_todraw<m_particleTypes.size()) m_todraw=_todraw;
 }
 
-void World::setRandomType(int _randomSeed)
+void WorldCPU::setRandomType(int _randomSeed)
 {
   m_particleTypes[3].randomize(_randomSeed);
   m_particleTypes[3].printVariables();
 }
 
-std::vector<std::vector<std::vector<float>>> World::render3dGrid(ParticleProperties *p)
+std::vector<std::vector<std::vector<float>>> WorldCPU::render3dGrid(ParticleProperties *p)
 {
   std::vector<std::vector<std::vector<float>>> rendergrid;
   rendergrid.clear();
@@ -1309,7 +1309,7 @@ std::vector<std::vector<std::vector<float>>> World::render3dGrid(ParticlePropert
   return rendergrid;
 }
 
-Vec3 World::getGridXYZ(int k) // CHECK THIS
+Vec3 WorldCPU::getGridXYZ(int k) // CHECK THIS
 {
   int z = floor(k/(m_gridwidth*m_gridheight));
   int y = floor((k - z*m_gridwidth*m_gridheight)/m_gridwidth);
@@ -1318,12 +1318,12 @@ Vec3 World::getGridXYZ(int k) // CHECK THIS
   return Vec3(x,y,z);
 }
 
-int World::getSnapshotMode()
+int WorldCPU::getSnapshotMode()
 {
   return m_marching.getSnapshotMode();
 }
 
-void World::drawLoading()
+void WorldCPU::drawLoading()
 {
 
   /// The following section is modified from :-
@@ -1374,7 +1374,7 @@ void World::drawLoading()
   glEnable(GL_LIGHTING) ;
 }
 
-void World::drawCube()
+void WorldCPU::drawCube()
 {
   if(!m_3d)
   {
@@ -1390,7 +1390,7 @@ void World::drawCube()
   }
 }
 
-void World::makeParticlesBig()
+void WorldCPU::makeParticlesBig()
 {
     m_pointsize=10.f;
     m_squaresize=1.0f;
@@ -1399,7 +1399,7 @@ void World::makeParticlesBig()
     hashParticles();
 }
 
-void World::makeParticlesSmall()
+void WorldCPU::makeParticlesSmall()
 {
     m_pointsize=5.0f;
     m_squaresize=0.5f;
@@ -1408,7 +1408,7 @@ void World::makeParticlesSmall()
     hashParticles();
 }
 
-void World::increase2DResolutionWORLD()
+void WorldCPU::increase2DResolutionWORLD()
 {
   ++m_render2DResolution;
   m_marching.increase2DResolution();
@@ -1416,7 +1416,7 @@ void World::increase2DResolutionWORLD()
   m_render2dheight=m_gridheight*m_render2DResolution;
 }
 
-void World::decrease2DResolutionWORLD()
+void WorldCPU::decrease2DResolutionWORLD()
 {
   m_marching.decrease2DResolution();
   if(m_render2DResolution!=1)

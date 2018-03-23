@@ -95,7 +95,7 @@ public:
   /// \brief setWorld   sets m_world to the pointer input
   /// \param[in] _world the pointer to set m_world to
   //----------------------------------------------------------------------------------------------------------------------
-  void setWorld(World *_world);
+  void setWorld(WorldCPU *_world);
 
   // Functions below are called to toggle bools when button is pressed
   void pressDraw();
@@ -144,7 +144,7 @@ private:
   bool m_helpscreen;
   GLuint m_iconsTexture; //
   int m_clickdownbutton; //
-  World *m_world;
+  WorldCPU *m_world;
   std::string m_randomSeed;
 
 };

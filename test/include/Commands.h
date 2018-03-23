@@ -16,9 +16,9 @@ class Command
 public:
   ~Command() {}
   virtual void execute() = 0;
-  void setWorld(World *_world) { m_world=_world; }
+  void setWorld(WorldCPU *_world) { m_world=_world; }
 protected:
-  World *m_world;
+  WorldCPU *m_world;
 };
 
 class ClearWorld : public Command

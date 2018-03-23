@@ -17,8 +17,8 @@
 #include <thrust/tuple.h>
 #include <thrust/sort.h>
 
-#include "PP2_gpu.h"
-#include "PP2_gpu.cuh"
+#include "World_gpu.h"
+#include "World_gpu.cuh"
 
 /**
   * Find the cell hash of each point. The hash is returned as the mapping of a point index to a cell.
