@@ -18,7 +18,7 @@
 #include <cmath>
 #include <cassert>
 
-#include"include/Mat3_gpu.h"
+#include"Mat3_gpu.h"
 
 class Vec3
 {

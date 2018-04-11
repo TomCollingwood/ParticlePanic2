@@ -28,10 +28,10 @@
 #include <GL/glu.h>
 #endif
 
-#include "include/Vec3_gpu.h"
-#include "include/Particle_gpu.h"
-#include "include/ParticleProperties_gpu.h"
-#include "include/MarchingAlgorithms_gpu.h"
+#include "Vec3_gpu.h"
+#include "Particle_gpu.h"
+#include "ParticleProperties_gpu.h"
+#include "MarchingAlgorithms_gpu.h"
 
 
 /**
@@ -283,19 +283,12 @@ public:
 
     //---------------------------------- GPU --------------------------------------------------------------
 
-//    float * d_Px_ptr;
-//    float * d_Py_ptr;
-//    float * d_prevPx_ptr;
-//    float * d_prevPy_ptr;
-//    float * d_Vx_ptr;
-//    float * d_Vy_ptr;
-
-
-
-
-//    unsigned int * d_hash_ptr;
-//    unsigned int * d_cellOcc_ptr;
-//    unsigned int * d_scatterAdd_ptr;
+    float * d_Px_ptr;
+    float * d_Py_ptr;
+    float * d_prevPx_ptr;
+    float * d_prevPy_ptr;
+    float * d_Vx_ptr;
+    float * d_Vy_ptr;
 
     void initData();
 
@@ -344,8 +337,6 @@ private:
 
     /// A member that is updated when update() is called indicating the elapsed time
     double m_elapsedTime;
-
-    double m_timestep;
 
     // PARTICLES
     std::vector<Particle> m_particles;

@@ -1,4 +1,4 @@
-#include "PP2_gpu.h"
+#include "World_gpu.h"
 
 //-------------------------- DEVICE VECTORS ------------------
 thrust::device_vector<float> d_Px;

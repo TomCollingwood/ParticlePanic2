@@ -33,9 +33,8 @@
 
 #include "include/Toolbar.h"
 #include "include/Commands.h"
-
-#include "PP2_gpu.h"
-
+#include "World_cpu.h"
+#include "World_gpu.h"
 
 
 // Change this if you want something different.
@@ -46,7 +45,8 @@ int WIDTH = 900;
 int HEIGHT = 600;
 
 // Our World, which will store all the GL stuff
-WorldCPU *world = NULL;
+WorldCPU *m_worldCPU = NULL;
+WorldGPU *m_worldGPU = NULL;
 Toolbar *toolbar = NULL;
 
 //The window we'll be rendering to
@@ -112,7 +112,7 @@ int initSDL()
  * @return the elapsed time.
  */
 Uint32 timerCallback(Uint32 interval, void *) {
-    if (world != NULL)
+    if (m_worldCPU != NULL)
     {
       for(auto& i : commands)
       {
@@ -123,14 +123,13 @@ Uint32 timerCallback(Uint32 interval, void *) {
         delete i;
       }
       commands.clear();
-
-      if(world->getSnapshotMode()<2)
-        world->update(&updateinprogress);
+      if(m_worldCPU->getSnapshotMode()<2)
+        m_worldCPU->update(&updateinprogress);
 
       if(drawInTimer)
       {
         SDL_GL_MakeCurrent(gWindow,gContext);
-        world->draw();
+        m_worldCPU->draw();
         toolbar->drawToolbar(HEIGHT);
         SDL_GL_SwapWindow( gWindow );
       }
@@ -163,17 +162,17 @@ int main( int argc, char* args[] ) {
 
     // We should now be ready to use OpenGL
     // This object holds our World. It needs to be initialised before it can be drawn.
-    world = new WorldCPU();
+    m_worldCPU = new WorldCPU();
 
     toolbar = new Toolbar();
-    toolbar->setWorld(world);
+    toolbar->setWorld(m_worldCPU);
 
     // Initialise the World
-    world->init();
+    m_worldCPU->init();
 
     // Need an initial resize to make sure the projection matrix is initialised
-    world->resizeWindow(WIDTH, HEIGHT);
-    world->resizeWorld(WIDTH, HEIGHT);
+    m_worldCPU->resizeWindow(WIDTH, HEIGHT);
+    m_worldCPU->resizeWorld(WIDTH, HEIGHT);
 
     // Use a timer to update our World. This is the best way to handle updates,
     // as the timer runs in a separate thread and is therefore not affected by the
@@ -246,10 +245,10 @@ int main( int argc, char* args[] ) {
 
                 ResizeWorld *newcommand=new ResizeWorld();
                 newcommand->setwh(e.window.data1, e.window.data2);
-                newcommand->setWorld(world);
+                newcommand->setWorld(m_worldCPU);
                 commands.push_back(newcommand);
 
-                world->resizeWindow(e.window.data1, e.window.data2);
+                m_worldCPU->resizeWindow(e.window.data1, e.window.data2);
                 WIDTH=e.window.data1;
                 HEIGHT=e.window.data2;
             }
@@ -267,11 +266,11 @@ int main( int argc, char* args[] ) {
               }
               else if(e.key.keysym.sym == SDLK_UP)
               {
-                world->increase2DResolutionWORLD();
+                m_worldCPU->increase2DResolutionWORLD();
               }
               else if(e.key.keysym.sym == SDLK_DOWN)
               {
-                world->decrease2DResolutionWORLD();
+                m_worldCPU->decrease2DResolutionWORLD();
               }
             }
 
@@ -285,39 +284,39 @@ int main( int argc, char* args[] ) {
               }
               if(e.text.text[0]=='p' || e.text.text[0]=='o')
               {
-                if(!world->getSnapshotMode())
+                if(!m_worldCPU->getSnapshotMode())
                 {
                   bool toSet3D = false;
                   if(e.text.text[0]=='p') toSet3D=true;
 
                   ClearWorld *newcommand2=new ClearWorld();
-                  newcommand2->setWorld(world);
+                  newcommand2->setWorld(m_worldCPU);
                   commands.push_back(newcommand2);
 
                   Set3D *newcommand=new Set3D();
                   newcommand->setBool(toSet3D);
-                  newcommand->setWorld(world);
+                  newcommand->setWorld(m_worldCPU);
                   commands.push_back(newcommand);
 
                   ResizeWorld *newcommand3=new ResizeWorld();
                   newcommand3->setwh(WIDTH,HEIGHT);
-                  newcommand3->setWorld(world);
+                  newcommand3->setWorld(m_worldCPU);
                   commands.push_back(newcommand3);
                 }
               }
               else if(e.text.text[0]=='<' || e.text.text[0]=='>')
               {
                 ClearWorld *newcommand2=new ClearWorld();
-                newcommand2->setWorld(world);
+                newcommand2->setWorld(m_worldCPU);
                 commands.push_back(newcommand2);
 
                 ResizeWorld *newcommand3=new ResizeWorld();
                 newcommand3->setwh(WIDTH,HEIGHT);
-                newcommand3->setWorld(world);
+                newcommand3->setWorld(m_worldCPU);
                 commands.push_back(newcommand3);
               }
-              world->handleKeys( e.text.text[ 0 ] );
-              if(!world->getSnapshotMode())
+              m_worldCPU->handleKeys( e.text.text[ 0 ] );
+              if(!m_worldCPU->getSnapshotMode())
                 toolbar->handleKeys( e.text.text[ 0 ] );
             }
 
@@ -328,7 +327,7 @@ int main( int argc, char* args[] ) {
                   int x = 0, y = 0;
                   SDL_GetMouseState( &x, &y );
 
-                  if(toolbar->getdropdownopen() && !world->getSnapshotMode())
+                  if(toolbar->getdropdownopen() && !m_worldCPU->getSnapshotMode())
                   {
                     toolbar->handleClickDropDown(x, y, WIDTH, HEIGHT);
                   }
@@ -339,7 +338,7 @@ int main( int argc, char* args[] ) {
 
               else if (e.button.button == SDL_BUTTON_RIGHT)
               {
-                if(!world->getSnapshotMode())
+                if(!m_worldCPU->getSnapshotMode())
                 {
                   rightMouseButton=true;
                 }
@@ -355,14 +354,14 @@ int main( int argc, char* args[] ) {
                   leftMouseOnWorld=false;
                   leftMouseOnWorldPrevious=false;
 
-                  if(toolbar->getDrag() && !world->getSnapshotMode())
+                  if(toolbar->getDrag() && !m_worldCPU->getSnapshotMode())
                   {
                     int x = 0, y = 0;
                     SDL_GetMouseState( &x, &y );
 
                     MouseDragEnd *newcommand=new MouseDragEnd();
                     newcommand->setxy(x,y);
-                    newcommand->setWorld(world);
+                    newcommand->setWorld(m_worldCPU);
                     commands.push_back(newcommand);
                   }
                 }
@@ -379,12 +378,12 @@ int main( int argc, char* args[] ) {
             else if (e.type == SDL_MOUSEMOTION) {
               int x = 0, y = 0;
               SDL_GetMouseState( &x, &y );
-              world->mouseMove(x, y, leftMouseOnWorld);
+              m_worldCPU->mouseMove(x, y, leftMouseOnWorld);
             }
 
         }
 
-        if(leftMouseOnWorld && !world->get3D())
+        if(leftMouseOnWorld && !m_worldCPU->get3D())
         {
           int x = 0, y = 0;
           SDL_GetMouseState(&x, &y);
@@ -393,7 +392,7 @@ int main( int argc, char* args[] ) {
             if(!leftMouseOnWorldPrevious)
             {
               SelectDraggedParticles *newcommand=new SelectDraggedParticles();
-              newcommand->setWorld(world);
+              newcommand->setWorld(m_worldCPU);
               newcommand->setxy(x,y);
               commands.push_back(newcommand);
 
@@ -401,41 +400,41 @@ int main( int argc, char* args[] ) {
             }
 
             MouseDrag *newcommand=new MouseDrag();
-            newcommand->setWorld(world);
+            newcommand->setWorld(m_worldCPU);
             newcommand->setxy(x,y);
             commands.push_back(newcommand);
           }
           else if(toolbar->getDraw())
           {
             MouseDraw *newcommand=new MouseDraw();
-            newcommand->setWorld(world);
+            newcommand->setWorld(m_worldCPU);
             newcommand->setxy(x,y);
             commands.push_back(newcommand);
           }
           else if(toolbar->getErase())
           {
             MouseErase *newcommand=new MouseErase();
-            newcommand->setWorld(world);
+            newcommand->setWorld(m_worldCPU);
             newcommand->setxy(x,y);
             commands.push_back(newcommand);
           }
         }
 
-        else if(rightMouseButton && !world->get3D())
+        else if(rightMouseButton && !m_worldCPU->get3D())
         {
           int x = 0, y = 0;
           SDL_GetMouseState(&x, &y);
           std::cout<<"heyboos"<<std::endl;
 
           MouseDraw *newcommand=new MouseDraw();
-          newcommand->setWorld(world);
+          newcommand->setWorld(m_worldCPU);
           newcommand->setxy(x,y);
           commands.push_back(newcommand);
         }
 
         if(!drawInTimer)
         {
-          world->draw();
+          m_worldCPU->draw();
 
           toolbar->drawToolbar(HEIGHT);
 
@@ -449,10 +448,10 @@ int main( int argc, char* args[] ) {
     // Disable our timer
     SDL_RemoveTimer(timerID);
 
-    world->clearWorld();
+    m_worldCPU->clearWorld();
 
     // Delete our World
-    delete world;
+    delete m_worldCPU;
     //Destroy window
     SDL_DestroyWindow( gWindow );
 

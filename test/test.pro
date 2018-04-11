@@ -37,3 +37,17 @@ macx: {
   LIBS+= -framework OpenGL
   LIBS+= -framework GLUT
 }
+
+win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../libPP2_cpu/release/ -lPP2_cpu
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../libPP2_cpu/debug/ -lPP2_cpu
+else:unix: LIBS += -L$$OUT_PWD/../libPP2_cpu/ -lPP2_cpu
+
+INCLUDEPATH += $$PWD/../libPP2_cpu
+DEPENDPATH += $$PWD/../libPP2_cpu
+
+win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../libPP2_gpu/release/ -lPP2_gpu
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../libPP2_gpu/debug/ -lPP2_gpu
+else:unix: LIBS += -L$$OUT_PWD/../libPP2_gpu/ -lPP2_gpu
+
+INCLUDEPATH += $$PWD/../libPP2_gpu
+DEPENDPATH += $$PWD/../libPP2_gpu

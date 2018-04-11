@@ -43,7 +43,7 @@ __global__ void pointHash2D(unsigned int *hash,
     if (idx < N) {
         // Note that finding the grid coordinates are much simpler if the grid is over the range [0,1] in
         // each dimension and the points are also in the same space.
-        int gridPos[3];
+        int gridPos[2];
         gridPos[0] = floor(Px[idx] * res);
         gridPos[1] = floor(Py[idx] * res);
         //gridPos[2] = floor(Pz[idx] * res);
@@ -295,22 +295,31 @@ __global__ void setNewVelocity(unsigned int _N,
 
 
 
-void PP2_GPU::initData()
+void WorldGPU::initData()
 {
     d_Px = thrust::device_vector<float>();
     d_Py = thrust::device_vector<float>();
-    d_Px_ptr = thrust::raw_pointer_cast(&d_Px[0]);
-    d_Py_ptr = thrust::raw_pointer_cast(&d_Py[0]);
 
     d_prevPx = thrust::device_vector<float>();
     d_prevPy = thrust::device_vector<float>();
-    d_prevPx_ptr = thrust::raw_pointer_cast(&d_Px[0]);
-    d_prevPy_ptr = thrust::raw_pointer_cast(&d_Py[0]);
 
     d_Vx = thrust::device_vector<float>();
     d_Vy = thrust::device_vector<float>();
-    d_Vx_ptr = thrust::raw_pointer_cast(&d_Vx[0]);
-    d_Vy_ptr = thrust::raw_pointer_cast(&d_Vy[0]);
+
+    // populate the vectors with particles
+    for(int x = 0; x<10; ++x)
+    {
+        for(int y = 0; y<10; ++y)
+        {
+            d_Px.push_back(0.25f + x*0.05f);
+            d_Py.push_back(1.00f - y*0.05f);
+            d_prevPx.push_back(0.25f + x*0.05f);
+            d_prevPy.push_back(1.00f - y*0.05f);
+            d_Vx.push_back(0.0f);
+            d_Vy.push_back(0.0f);
+            m_numPoints++;
+        }
+    }
 
     d_hash = thrust::device_vector<unsigned int>(m_numPoints);
     d_cellOcc = thrust::device_vector<unsigned int>(m_gridResolution*m_gridResolution,0);
@@ -319,9 +328,16 @@ void PP2_GPU::initData()
     d_hash_ptr = thrust::raw_pointer_cast(&d_hash[0]);
     d_cellOcc_ptr = thrust::raw_pointer_cast(&d_cellOcc[0]);
     d_scatterAdd_ptr = thrust::raw_pointer_cast(&d_scatterAdd[0]);
+
+    d_Vx_ptr = thrust::raw_pointer_cast(&d_Vx[0]);
+    d_Vy_ptr = thrust::raw_pointer_cast(&d_Vy[0]);
+    d_prevPx_ptr = thrust::raw_pointer_cast(&d_Px[0]);
+    d_prevPy_ptr = thrust::raw_pointer_cast(&d_Py[0]);
+    d_Px_ptr = thrust::raw_pointer_cast(&d_Px[0]);
+    d_Py_ptr = thrust::raw_pointer_cast(&d_Py[0]);
 }
 
-void PP2_GPU::castPointers()
+void WorldGPU::castPointers()
 {
     d_Px_ptr = thrust::raw_pointer_cast(&d_Px[0]);
     d_Py_ptr = thrust::raw_pointer_cast(&d_Py[0]);
@@ -334,7 +350,7 @@ void PP2_GPU::castPointers()
     d_scatterAdd_ptr = thrust::raw_pointer_cast(&d_scatterAdd[0]);
 }
 
-void PP2_GPU::hashOccSort()
+void WorldGPU::hashOccSort()
 {
 
     if(m_numPoints==0) return;
@@ -342,6 +358,7 @@ void PP2_GPU::hashOccSort()
     unsigned int nBlocks = m_numPoints / nThreads + 1;
 
     castPointers();
+
 
     pointHash2D<<<nBlocks, nThreads>>>(d_hash_ptr, d_Px_ptr, d_Py_ptr,
                                          m_numPoints,
@@ -364,7 +381,7 @@ void PP2_GPU::hashOccSort()
     cudaThreadSynchronize();
 }
 
-void PP2_GPU::addParticle(float P_x, float P_y, float V_x, float V_y)
+void WorldGPU::addParticle(float P_x, float P_y, float V_x, float V_y)
 {
     d_Px.push_back(P_x);
     d_Py.push_back(P_y);
@@ -376,19 +393,19 @@ void PP2_GPU::addParticle(float P_x, float P_y, float V_x, float V_y)
     m_numPoints++;
 }
 
-void PP2_GPU::simulate()
+void WorldGPU::simulate()
 {
-    if(!m_started)
-    {
-        for(int i = 0; i< 20; ++i)
-        {
-            for(int j = 0; j<20 ; ++j)
-            {
-                addParticle(0.05f+i*0.05f,1.0f-0.05f*j,0.0f,0.0f);
-            }
-        }
-        m_started =true;
-    }
+//    if(!m_started)
+//    {
+//        for(int i = 0; i< 20; ++i)
+//        {
+//            for(int j = 0; j<20 ; ++j)
+//            {
+//                addParticle(0.05f+i*0.05f,1.0f-0.05f*j,0.0f,0.0f);
+//            }
+//        }
+//        m_started =true;
+//    }
 
     castPointers();
 
@@ -459,12 +476,12 @@ void PP2_GPU::simulate()
 
 }
 
-int PP2_GPU::getNumPoints()
+int WorldGPU::getNumPoints()
 {
     return m_numPoints;
 }
 
-void PP2_GPU::clearMem()
+void WorldGPU::clearMem()
 {
     d_Px.clear();
     thrust::device_vector<float>().swap(d_Px);

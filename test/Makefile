@@ -15,7 +15,7 @@ CXX           = g++
 DEFINES       = -DQT_QML_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB
 CFLAGS        = -pipe -g -Wall -W -D_REENTRANT -fPIC $(DEFINES)
 CXXFLAGS      = -pipe -std=c++11 -Wall -Wextra -pedantic -g -std=gnu++11 -Wall -W -D_REENTRANT -fPIC $(DEFINES)
-INCPATH       = -I. -I../include -isystem /usr/include/libdrm -I/opt/Qt5.9.0/5.9/gcc_64/include -I/opt/Qt5.9.0/5.9/gcc_64/include/QtGui -I/opt/Qt5.9.0/5.9/gcc_64/include/QtCore -I. -I/opt/Qt5.9.0/5.9/gcc_64/mkspecs/linux-g++
+INCPATH       = -I. -I../include -I../libPP2_cpu -I../libPP2_gpu -isystem /usr/include/libdrm -I/opt/Qt5.9.0/5.9/gcc_64/include -I/opt/Qt5.9.0/5.9/gcc_64/include/QtGui -I/opt/Qt5.9.0/5.9/gcc_64/include/QtCore -I. -I/opt/Qt5.9.0/5.9/gcc_64/mkspecs/linux-g++
 QMAKE         = /opt/Qt5.9.0/5.9/gcc_64/bin/qmake
 DEL_FILE      = rm -f
 CHK_DIR_EXISTS= test -d
@@ -39,7 +39,7 @@ DISTNAME      = test1.0.0
 DISTDIR = /home/i7449874/Documents/GitHubStuff/ParticlePanic2/test/obj/test1.0.0
 LINK          = g++
 LFLAGS        = -Wl,-rpath,/opt/Qt5.9.0/5.9/gcc_64/lib
-LIBS          = $(SUBLIBS) -L/usr/local/lib -L../lib -L -lPP2_cpu -lPP2_gpu -Wl,-rpath,/usr/local/lib -lSDL2 -lGLU -lSDL2_image -L/usr/local/lib/ -lGL -L/opt/Qt5.9.0/5.9/gcc_64/lib -lQt5Gui -lQt5Core -lpthread 
+LIBS          = $(SUBLIBS) -L/usr/local/lib -L../lib -L -Wl,-rpath,/usr/local/lib -lSDL2 -lGLU -lSDL2_image -L/usr/local/lib/ -L/home/i7449874/Documents/GitHubStuff/ParticlePanic2/test/../libPP2_cpu/ -lPP2_cpu -L/home/i7449874/Documents/GitHubStuff/ParticlePanic2/test/../libPP2_gpu/ -lPP2_gpu -lGL -L/opt/Qt5.9.0/5.9/gcc_64/lib -lQt5Gui -lQt5Core -lpthread 
 AR            = ar cqs
 RANLIB        = 
 SED           = sed
@@ -691,7 +691,12 @@ obj/Main.o: src/Main.cpp include/Toolbar.h \
 		../include/ParticleProperties_cpu.h \
 		../include/MarchingAlgorithms_cpu.h \
 		include/Commands.h \
-		../include/PP2_gpu.h
+		../include/World_gpu.h \
+		../include/Vec3_gpu.h \
+		../include/Mat3_gpu.h \
+		../include/Particle_gpu.h \
+		../include/ParticleProperties_gpu.h \
+		../include/MarchingAlgorithms_gpu.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o obj/Main.o src/Main.cpp
 
 ####### Install

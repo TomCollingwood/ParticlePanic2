@@ -57,7 +57,7 @@ SOURCES       = src/MarchingAlgorithms_gpu.cpp \
 		src/ParticleProperties_gpu.cpp \
 		src/Vec3_gpu.cpp \
 		src/World_gpu.cpp 
-OBJECTS       = cudaobj/PP2_gpu.o \
+OBJECTS       = cudaobj/World_gpu.o \
 		obj/cuda_link.o \
 		obj/MarchingAlgorithms_gpu.o \
 		obj/Mat3_gpu.o \
@@ -65,16 +65,14 @@ OBJECTS       = cudaobj/PP2_gpu.o \
 		obj/ParticleProperties_gpu.o \
 		obj/Vec3_gpu.o \
 		obj/World_gpu.o
-DIST          = include/PP2_gpu.cuh \
-		.qmake.stash \
+DIST          = .qmake.stash \
 		libPP2_gpu.pro include/MarchingAlgorithms_gpu.h \
 		include/Mat3_gpu.h \
 		include/Particle_gpu.h \
 		include/ParticleProperties_gpu.h \
-		include/PP2_gpu.h \
 		include/Vec3_gpu.h \
 		include/World_gpu.h \
-		include/PP2_gpu.cuh src/MarchingAlgorithms_gpu.cpp \
+		include/World_gpu.cuh src/MarchingAlgorithms_gpu.cpp \
 		src/Mat3_gpu.cpp \
 		src/Particle_gpu.cpp \
 		src/ParticleProperties_gpu.cpp \
@@ -500,10 +498,10 @@ dist: distdir FORCE
 distdir: FORCE
 	@test -d $(DISTDIR) || mkdir -p $(DISTDIR)
 	$(COPY_FILE) --parents $(DIST) $(DISTDIR)/
-	$(COPY_FILE) --parents cudasrc/PP2_gpu.cu $(DISTDIR)/
-	$(COPY_FILE) --parents cudaobj/PP2_gpu.o $(DISTDIR)/
+	$(COPY_FILE) --parents cudasrc/World_gpu.cu $(DISTDIR)/
+	$(COPY_FILE) --parents cudaobj/World_gpu.o $(DISTDIR)/
 	$(COPY_FILE) --parents /opt/Qt5.9.0/5.9/gcc_64/mkspecs/features/data/dummy.cpp $(DISTDIR)/
-	$(COPY_FILE) --parents include/MarchingAlgorithms_gpu.h include/Mat3_gpu.h include/Particle_gpu.h include/ParticleProperties_gpu.h include/PP2_gpu.h include/Vec3_gpu.h include/World_gpu.h include/PP2_gpu.cuh $(DISTDIR)/
+	$(COPY_FILE) --parents include/MarchingAlgorithms_gpu.h include/Mat3_gpu.h include/Particle_gpu.h include/ParticleProperties_gpu.h include/Vec3_gpu.h include/World_gpu.h include/World_gpu.cuh $(DISTDIR)/
 	$(COPY_FILE) --parents src/MarchingAlgorithms_gpu.cpp src/Mat3_gpu.cpp src/Particle_gpu.cpp src/ParticleProperties_gpu.cpp src/Vec3_gpu.cpp src/World_gpu.cpp $(DISTDIR)/
 
 
@@ -532,17 +530,17 @@ check: first
 
 benchmark: first
 
-compiler_cuda_make_all: cudaobj/PP2_gpu.o
+compiler_cuda_make_all: cudaobj/World_gpu.o
 compiler_cuda_clean:
 	-$(DEL_FILE) cudaobj/*.o
-cudaobj/PP2_gpu.o: cudasrc/PP2_gpu.cu
-	${CUDA_PATH}/bin/nvcc -ccbin /usr/bin/g++ -m64 -g -G -gencode arch=compute_50,code=sm_50 -gencode arch=compute_30,code=sm_30 -gencode arch=compute_35,code=sm_35 -gencode arch=compute_${CUDA_ARCH},code=sm_${CUDA_ARCH} --compiler-options -fno-strict-aliasing --compiler-options -fPIC -use_fast_math --std=c++11 -dc -I./include -I${CUDA_PATH}/include -I${CUDA_PATH}/include/cuda -I${CUDA_PATH}/samples/common/inc  -L${CUDA_PATH}/lib64 -L${CUDA_PATH}/lib64/nvidia -lcuda -lcudart -lcudadevrt -lcurand cudasrc/PP2_gpu.cu -o cudaobj/PP2_gpu.o
+cudaobj/World_gpu.o: cudasrc/World_gpu.cu
+	${CUDA_PATH}/bin/nvcc -ccbin /usr/bin/g++ -m64 -g -G -gencode arch=compute_50,code=sm_50 -gencode arch=compute_30,code=sm_30 -gencode arch=compute_35,code=sm_35 -gencode arch=compute_${CUDA_ARCH},code=sm_${CUDA_ARCH} --compiler-options -fno-strict-aliasing --compiler-options -fPIC -use_fast_math --std=c++11 -dc -I./include -I${CUDA_PATH}/include -I${CUDA_PATH}/include/cuda -I${CUDA_PATH}/samples/common/inc  -L${CUDA_PATH}/lib64 -L${CUDA_PATH}/lib64/nvidia -lcuda -lcudart -lcudadevrt -lcurand cudasrc/World_gpu.cu -o cudaobj/World_gpu.o
 
 compiler_cudalink_make_all: obj/cuda_link.o
 compiler_cudalink_clean:
 	-$(DEL_FILE) obj/cuda_link.o
-obj/cuda_link.o: cudaobj/PP2_gpu.o 
-	${CUDA_PATH}/bin/nvcc -ccbin /usr/bin/g++ -m64 -g -G -gencode arch=compute_50,code=sm_50 -gencode arch=compute_30,code=sm_30 -gencode arch=compute_35,code=sm_35 -gencode arch=compute_${CUDA_ARCH},code=sm_${CUDA_ARCH} --compiler-options -fno-strict-aliasing --compiler-options -fPIC -use_fast_math --std=c++11 -I./include -I${CUDA_PATH}/include -I${CUDA_PATH}/include/cuda -I${CUDA_PATH}/samples/common/inc  -dlink cudaobj/PP2_gpu.o -o obj/cuda_link.o -L${CUDA_PATH}/lib64 -L${CUDA_PATH}/lib64/nvidia -lcuda -lcudart -lcudadevrt -lcurand
+obj/cuda_link.o: cudaobj/World_gpu.o 
+	${CUDA_PATH}/bin/nvcc -ccbin /usr/bin/g++ -m64 -g -G -gencode arch=compute_50,code=sm_50 -gencode arch=compute_30,code=sm_30 -gencode arch=compute_35,code=sm_35 -gencode arch=compute_${CUDA_ARCH},code=sm_${CUDA_ARCH} --compiler-options -fno-strict-aliasing --compiler-options -fPIC -use_fast_math --std=c++11 -I./include -I${CUDA_PATH}/include -I${CUDA_PATH}/include/cuda -I${CUDA_PATH}/samples/common/inc  -dlink cudaobj/World_gpu.o -o obj/cuda_link.o -L${CUDA_PATH}/lib64 -L${CUDA_PATH}/lib64/nvidia -lcuda -lcudart -lcudadevrt -lcurand
 
 compiler_rcc_make_all:
 compiler_rcc_clean:

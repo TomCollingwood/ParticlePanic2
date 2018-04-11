@@ -23,8 +23,8 @@
 #include <GL/glu.h>
 #endif
 
-#include "include/Vec3_gpu.h"
-#include "include/ParticleProperties_gpu.h"
+#include "Vec3_gpu.h"
+#include "ParticleProperties_gpu.h"
 
 class MarchingAlgorithms
 {
