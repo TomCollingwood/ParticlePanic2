@@ -17,7 +17,8 @@ QMAKE_CXXFLAGS += -std=c++11 -fPIC
 INCLUDEPATH += ./include ${CUDA_PATH}/include ${CUDA_PATH}/include/cuda ${CUDA_PATH}/samples/common/inc
 
 HEADERS += ./include/*.h \
-    include/World_gpu.cuh
+    include/World_gpu.cuh \
+    include/particles_kernel_impl.cuh
 
 # Include source files
 SOURCES += src/*.cpp
@@ -98,4 +99,5 @@ includeinstall.commands = mkdir -p $$INC_INSTALL_DIR && cp include/*.h $$INC_INS
 QMAKE_EXTRA_TARGETS += includeinstall
 POST_TARGETDEPS += includeinstall
 
-DISTFILES +=
+DISTFILES += \
+    include/particles_kernel_impl.cuh

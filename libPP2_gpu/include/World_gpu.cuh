@@ -1,72 +1,85 @@
-#include "World_gpu.h"
+#ifndef _WORLDGPU_CUH_
+#define _WORLDGPU_CUH_
 
-//-------------------------- DEVICE VECTORS ------------------
-thrust::device_vector<float> d_Px;
-thrust::device_vector<float> d_Py;
-thrust::device_vector<float> d_prevPx;
-thrust::device_vector<float> d_prevPy;
-thrust::device_vector<float> d_Vx;
-thrust::device_vector<float> d_Vy;
+// For the CUDA runtime routines (prefixed with "cuda_")
+#include <cuda_runtime.h>
+#include <cuda.h>
+#include <curand.h>
+#include <cuda_runtime_api.h>
+#include <device_functions.h>
 
-thrust::device_vector<unsigned int> d_cellOcc;
-thrust::device_vector<unsigned int> d_hash;
-thrust::device_vector<unsigned int> d_scatterAdd;
+//// For thrust routines (e.g. stl-like operators and algorithms on vectors)
+#include <thrust/host_vector.h>
+#include <thrust/device_vector.h>
+#include <thrust/iterator/zip_iterator.h>
+#include <thrust/tuple.h>
+#include <thrust/sort.h>
 
 
-//-------------------------- KERNELS ----------------------------
+extern "C"
+{
+    void cudaInit(int argc, char **argv);
 
-__global__ void pointHash2D(unsigned int *hash,
-                          const float *Px,
-                          const float *Py,
-                          //const float *Pz,
-                          const unsigned int N,
-                          const unsigned int res);
+    void allocateArray(void **devPtr, size_t size);
 
-__global__ void countCellOccupancy(unsigned int *cellOcc,
-                                   unsigned int *hash,
-                                   unsigned int nCells,
-                                   unsigned int nPoints);
+    void hashOccSort(int _num_points,
+                 int _gridRes,
+                 unsigned int * _d_hash_ptr,
+                 unsigned int * _d_cellOcc_ptr,
+                 unsigned int * _d_scatterAdd_ptr,
+                 float * _Px,
+                 float * _Py,
+                 float * _prevPx,
+                 float * _prevPy,
+                 float * _Vx,
+                 float * _Vy);
 
-__global__ void viscosity(unsigned int _N,
-                          unsigned int _gridRes,
-                          float _iRadius,
-                          float _timestep,
-                          float * _P_x,
-                          float * _P_y,
-                          float * _V_x,
-                          float * _V_y,
-                          unsigned int * _d_hash,
-                          unsigned int * _d_cellOcc,
-                          unsigned int * _d_scatterAdd);
+    void viscosity(unsigned int _N,
+                   unsigned int _gridRes,
+                   float _iRadius,
+                   float _timestep,
+                   float *_P_x,
+                   float *_P_y,
+                   float *_V_x,
+                   float *_V_y,
+                   unsigned int *_d_hash,
+                   unsigned int *_d_cellOcc,
+                   unsigned int *_d_scatterAdd);
 
-__global__ void integrate(unsigned int _N,
-                          float _timestep,
-                          float * _P_x,
-                          float * _P_y,
-                          float * _prevP_x,
-                          float * _prevP_y,
-                          float * _V_x,
-                          float * _V_y);
+    void integrate(unsigned int _N,
+                   float _timestep,
+                   float * _P_x,
+                   float * _P_y,
+                   float * _prevP_x,
+                   float * _prevP_y,
+                   float * _V_x,
+                   float * _V_y);
 
-__global__ void density(unsigned int _N,
-                        unsigned int _gridRes,
-                        float _iRadius,
+    void densityD(unsigned int _N,
+                  unsigned int _gridRes,
+                  float _iRadius,
+                  float _timestep,
+                  float * _P_x,
+                  float * _P_y,
+                  float * _V_x,
+                  float * _V_y,
+                  unsigned int * _d_hash,
+                  unsigned int * _d_cellOcc,
+                  unsigned int * _d_scatterAdd);
+
+    void updateVelocity(unsigned int _N,
                         float _timestep,
-                        float * _P_x,
-                        float * _P_y,
-                        float * _V_x,
-                        float * _V_y,
-                        unsigned int * _d_hash,
-                        unsigned int * _d_cellOcc,
-                        unsigned int * _d_scatterAdd);
+                        float *_P_x,
+                        float *_P_y,
+                        float *_prevP_x,
+                        float *_prevP_y,
+                        float *_V_x,
+                        float *_V_y);
 
-__global__ void setNewVelocity(unsigned int _N,
-                               float _timestep,
-                               float * _P_x,
-                               float * _P_y,
-                               float * _prevP_x,
-                               float * _prevP_y,
-                               float * _V_x,
-                               float * _V_y);
+    void addGravity(unsigned int _N,
+                    float *_V_x,
+                    float *_V_y);
 
+}
 
+#endif

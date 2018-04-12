@@ -3,6 +3,8 @@
 ///  @brief contains all particles and methods to draw and update them
 
 #include "include/World_gpu.h"
+#include "include/World_gpu.cuh"
+#include "include/particles_kernel_impl.cuh"
 
 WorldGPU::WorldGPU() :
   m_isInit(false),
@@ -368,7 +370,7 @@ void WorldGPU::update(bool *updateinprogress) {
     }
     choo++;
   }
-  // */
+  //
 
   //------------------------------------------POSITION----------------------------------------
 

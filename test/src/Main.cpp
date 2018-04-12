@@ -36,6 +36,7 @@
 #include "World_cpu.h"
 #include "World_gpu.h"
 
+class WorldGPU;
 
 // Change this if you want something different.
 #define WINDOW_TITLE "ParticlePanic"
@@ -135,6 +136,12 @@ Uint32 timerCallback(Uint32 interval, void *) {
       }
 
     }
+
+    if(m_worldGPU != NULL)
+    {
+        m_worldGPU->simulate();
+    }
+
     ++frame;
     return interval;
 }
@@ -164,11 +171,14 @@ int main( int argc, char* args[] ) {
     // This object holds our World. It needs to be initialised before it can be drawn.
     m_worldCPU = new WorldCPU();
 
+    m_worldGPU = new WorldGPU();
+
     toolbar = new Toolbar();
     toolbar->setWorld(m_worldCPU);
 
     // Initialise the World
     m_worldCPU->init();
+    m_worldGPU->initData();
 
     // Need an initial resize to make sure the projection matrix is initialised
     m_worldCPU->resizeWindow(WIDTH, HEIGHT);
