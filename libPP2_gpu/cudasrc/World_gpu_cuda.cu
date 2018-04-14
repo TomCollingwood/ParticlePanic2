@@ -17,41 +17,66 @@
 #include <thrust/tuple.h>
 #include <thrust/sort.h>
 
-#include "particles_kernel_impl.cuh"
+#include "World_gpu.cuh"
+#include "particles_kernel.cuh"
+#include "particles_data.cuh"
 
 extern "C"
 {
 
-    void cudaInit(int argc, char **argv)
-    {
-        int devID;
+//    void cudaInit(int argc, char **argv)
+//    {
+//        int devID;
 
-        // use command-line specified CUDA device, otherwise use device with highest Gflops/s
-        devID = findCudaDevice(argc, (const char **)argv);
+//        // use command-line specified CUDA device, otherwise use device with highest Gflops/s
+//        devID = findCudaDevice(argc, (const char **)argv);
 
-        if (devID < 0)
-        {
-            printf("No CUDA Capable devices found, exiting...\n");
-            exit(EXIT_SUCCESS);
-        }
-    }
+//        if (devID < 0)
+//        {
+//            printf("No CUDA Capable devices found, exiting...\n");
+//            exit(EXIT_SUCCESS);
+//        }
+//    }
 
     void allocateArray(void **devPtr, size_t size)
     {
-        checkCudaErrors(cudaMalloc(devPtr, size));
+        cudaMalloc(devPtr, size);
+    }
+
+    void initializeData(int _num_pointsX, int _num_pointsY, int _gridRes, ParticlesData ** _data)
+    {
+        (*_data) = new ParticlesData();
+
+        int nCells = _gridRes*_gridRes;
+        int nParticles = _num_pointsX*_num_pointsY;
+
+        (*_data)->d_Px.resize(nParticles);
+        (*_data)->d_Py.resize(nParticles);
+        (*_data)->d_prevPx.resize(nParticles);
+        (*_data)->d_prevPy.resize(nParticles);
+        (*_data)->d_Vx.resize(nParticles,0.0f);
+        (*_data)->d_Vy.resize(nParticles,0.0f);
+
+        for(int x = 0; x<_num_pointsX; ++x)
+        {
+            for(int y=0; y<_num_pointsY; ++y)
+            {
+                (*_data)->d_Px[x*_num_pointsX + y]=0.0f+0.01f*x;
+                (*_data)->d_Py[x*_num_pointsX + y]=0.0f+0.01f*y;
+                (*_data)->d_prevPx[x*_num_pointsX + y]=0.0f+0.01f*x;
+                (*_data)->d_prevPy[x*_num_pointsX + y]=0.0f+0.01f*y;
+//                (*_data)->d_Vx[x*_num_pointsX + y]=0.0f;
+//                (*_data)->d_Vy[x*_num_pointsX + y]=0.0f;
+            }
+        }
+        (*_data)->d_hash.resize(nParticles,0);
+        (*_data)->d_cellOcc.resize(nCells,0);
+        (*_data)->d_scatterAdd.resize(nCells,0);
     }
 
     void hashOccSort(int _num_points,
                  int _gridRes,
-                 unsigned int * _d_hash_ptr,
-                 unsigned int * _d_cellOcc_ptr,
-                 unsigned int * _d_scatterAdd_ptr,
-                 float * _Px,
-                 float * _Py,
-                 float * _prevPx,
-                 float * _prevPy,
-                 float * _Vx,
-                 float * _Vy
+                 ParticlesData * _data
                  )
     {
         if(_num_points==0) return;
@@ -59,37 +84,28 @@ extern "C"
         unsigned int nBlocks = _num_points / nThreads + 1;
         unsigned int nCells = _gridRes*_gridRes;
 
-        castPointers();
-
-        pointHash2D<<<nBlocks, nThreads>>>(_d_hash_ptr,
-                                           _Px,
-                                           _Py,
+        pointHash2D<<<nBlocks, nThreads>>>(thrust::raw_pointer_cast(_data->d_hash.data()),
+                                           thrust::raw_pointer_cast(_data->d_Px.data()),
+                                           thrust::raw_pointer_cast(_data->d_Py.data()),
                                            _num_points,
                                            _gridRes);
 
         cudaThreadSynchronize();
 
-        thrust::device_vector<float> d_Px(_Px, _Px + _num_points);
-        thrust::device_vector<float> d_Py(_Py, _Py + _num_points);
-        thrust::device_vector<float> d_prevPx(_prevPx, _prevPx + _num_points);
-        thrust::device_vector<float> d_prevPy(_prevPy, _prevPy + _num_points);
-        thrust::device_vector<float> d_Vx(_Vx, _Vx + _num_points);
-        thrust::device_vector<float> d_Vy(_Vy, _Vy + _num_points);
-        thrust::device_vector<unsigned int> d_hash(_d_hash_ptr, _d_hash_ptr+_num_points);
-        thrust::device_vector<unsigned int> d_cellOcc(_d_cellOcc_ptr, _d_cellOcc_ptr+nCells);
-        thrust::device_vector<unsigned int> d_scatterAdd(_d_scatterAdd_ptr, _d_scatterAdd_ptr+nCells);
-
-        auto tuple = thrust::make_tuple( d_Px.begin(), d_Py.begin(), d_Vx.begin(), d_Vy.begin(), d_prevPx.begin(), d_prevPy.begin());
+        auto tuple = thrust::make_tuple( _data->d_Px.begin(), _data->d_Py.begin(), _data->d_Vx.begin(), _data->d_Vy.begin(), _data->d_prevPx.begin(), _data->d_prevPy.begin());
         auto zippy = thrust::make_zip_iterator(tuple);
-        thrust::sort_by_key(d_hash.begin(), d_hash.end(), zippy);
+        thrust::sort_by_key(_data->d_hash.begin(), _data->d_hash.end(), zippy); // bad alloc here
 
         cudaThreadSynchronize();
 
-        thrust::exclusive_scan(d_cellOcc.begin(),d_cellOcc.end(),d_scatterAdd.begin());
+        thrust::exclusive_scan(_data->d_cellOcc.begin(),_data->d_cellOcc.end(),_data->d_scatterAdd.begin());
 
         cudaThreadSynchronize();
 
-        countCellOccupancy<<<nBlocks, nThreads>>>(_d_cellOcc_ptr, _d_hash_ptr, nCells, _num_points);
+        countCellOccupancyD<<<nBlocks, nThreads>>>((uint *)thrust::raw_pointer_cast(_data->d_cellOcc.data()),
+                                                   (uint *)thrust::raw_pointer_cast(_data->d_hash.data()),
+                                                   nCells,
+                                                   _num_points);
 
         cudaThreadSynchronize();
     }
@@ -98,13 +114,7 @@ extern "C"
                    unsigned int _gridRes,
                    float _iRadius,
                    float _timestep,
-                   float *_P_x,
-                   float *_P_y,
-                   float *_V_x,
-                   float *_V_y,
-                   unsigned int *_d_hash,
-                   unsigned int *_d_cellOcc,
-                   unsigned int *_d_scatterAdd)
+                   ParticlesData * _data)
     {
 
         unsigned int nThreads = 1024;
@@ -114,48 +124,37 @@ extern "C"
                                         _gridRes,
                                         _iRadius,
                                         _timestep,
-                                        _P_x,
-                                        _P_y,
-                                        _V_x,
-                                        _V_y,
-                                        _hash,
-                                        _cellOcc,
-                                        _scatterAdd);
+                                        (float *)thrust::raw_pointer_cast(_data->d_Px.data()),
+                                        (float *)thrust::raw_pointer_cast(_data->d_Py.data()),
+                                        (float *)thrust::raw_pointer_cast(_data->d_Vx.data()),
+                                        (float *)thrust::raw_pointer_cast(_data->d_Vy.data()),
+                                        (uint *)thrust::raw_pointer_cast(_data->d_hash.data()),
+                                        (uint *)thrust::raw_pointer_cast(_data->d_cellOcc.data()),
+                                        (uint *)thrust::raw_pointer_cast(_data->d_scatterAdd.data()));
     }
 
     void integrate(unsigned int _N,
                    float _timestep,
-                   float * _P_x,
-                   float * _P_y,
-                   float * _prevP_x,
-                   float * _prevP_y,
-                   float * _V_x,
-                   float * _V_y)
+                   ParticlesData * _data)
     {
         unsigned int nThreads = 1024;
         unsigned int nBlocks = _N / nThreads + 1;
 
         integrateD<<<nBlocks,nThreads>>>(_N,
                                         _timestep,
-                                        _P_x,
-                                        _P_y,
-                                        _prevP_x,
-                                        _prevP_y,
-                                        _V_x,
-                                        _V_y);
+                                        (float *)thrust::raw_pointer_cast(_data->d_Px.data()),
+                                        (float *)thrust::raw_pointer_cast(_data->d_Py.data()),
+                                        (float *)thrust::raw_pointer_cast(_data->d_prevPx.data()),
+                                        (float *)thrust::raw_pointer_cast(_data->d_prevPy.data()),
+                                        (float *)thrust::raw_pointer_cast(_data->d_Vx.data()),
+                                        (float *)thrust::raw_pointer_cast(_data->d_Vy.data()));
     }
 
-    void densityD(unsigned int _N,
+    void density(unsigned int _N,
                   unsigned int _gridRes,
                   float _iRadius,
                   float _timestep,
-                  float * _P_x,
-                  float * _P_y,
-                  float * _V_x,
-                  float * _V_y,
-                  unsigned int * _d_hash,
-                  unsigned int * _d_cellOcc,
-                  unsigned int * _d_scatterAdd)
+                  ParticlesData * _data)
     {
 
         unsigned int nThreads = 1024;
@@ -165,43 +164,39 @@ extern "C"
                                       _gridRes,
                                       _iRadius,
                                       _timestep,
-                                      _P_x,
-                                      _P_y,
-                                      _V_x,
-                                      _V_y,
-                                      _d_hash,
-                                      _d_cellOcc,
-                                      _d_scatterAdd);
+                                      (float *)thrust::raw_pointer_cast(_data->d_Px.data()),
+                                      (float *)thrust::raw_pointer_cast(_data->d_Py.data()),
+                                      (float *)thrust::raw_pointer_cast(_data->d_Vx.data()),
+                                      (float *)thrust::raw_pointer_cast(_data->d_Vy.data()),
+                                      (uint *)thrust::raw_pointer_cast(_data->d_hash.data()),
+                                      (uint *)thrust::raw_pointer_cast(_data->d_cellOcc.data()),
+                                      (uint *)thrust::raw_pointer_cast(_data->d_scatterAdd.data()));
     }
 
     void updateVelocity(unsigned int _N,
                         float _timestep,
-                        float *_P_x,
-                        float *_P_y,
-                        float *_prevP_x,
-                        float *_prevP_y,
-                        float *_V_x,
-                        float *_V_y)
+                        ParticlesData * _data)
     {
         unsigned int nThreads = 1024;
         unsigned int nBlocks = _N / nThreads + 1;
         updateVelocityD<<<nBlocks,nThreads>>>(_N,
-                                               _timestep,
-                                               _P_x,
-                                               _P_y,
-                                               _prevP_x,
-                                               _prevP_y,
-                                               _V_x,
-                                               _V_y);
+                                              _timestep,
+                                              (float *)thrust::raw_pointer_cast(_data->d_Px.data()),
+                                              (float *)thrust::raw_pointer_cast(_data->d_Py.data()),
+                                              (float *)thrust::raw_pointer_cast(_data->d_prevPx.data()),
+                                              (float *)thrust::raw_pointer_cast(_data->d_prevPy.data()),
+                                              (float *)thrust::raw_pointer_cast(_data->d_Vx.data()),
+                                              (float *)thrust::raw_pointer_cast(_data->d_Vy.data()));
     }
 
     void addGravity(unsigned int _N,
-                    float *_V_x,
-                    float *_V_y)
+                    ParticlesData * _data)
     {
         unsigned int nThreads = 1024;
         unsigned int nBlocks = _N / nThreads + 1;
-        addGravityD<<<nBlocks,nThreads>>>(_N,_V_x,_V_y);
+        addGravityD<<<nBlocks,nThreads>>>(_N,
+                                          (float *)thrust::raw_pointer_cast(_data->d_Vx.data()),
+                                          (float *)thrust::raw_pointer_cast(_data->d_Vy.data()));
     }
 }
 

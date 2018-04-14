@@ -5,8 +5,8 @@
 /// \date 26/4/16 Updated to NCCA Coding standard
 /// Revision History : See https://github.com/TomCollingwood/ParticlePanic
 
-#ifndef _WORLD_H_
-#define _WORLD_H_
+#ifndef _WORLDGPU_H_
+#define _WORLDGPU_H_
 
 #include <sys/time.h>
 #include <stdlib.h>
@@ -15,6 +15,8 @@
 #include <cmath>
 #include <string>
 #include <vector>
+
+//#include <thrust/device_vector.h>
 
 #ifdef __APPLE__
 #include <OpenGL/gl.h>
@@ -33,6 +35,7 @@
 #include "ParticleProperties_gpu.h"
 #include "MarchingAlgorithms_gpu.h"
 
+class ParticlesData;
 
 /**
  * @brief The Scene class
@@ -281,22 +284,16 @@ public:
     /// DRAWS A SQUARE OF m_particleTypes[todraw]
     void drawCube();
 
+    bool isinit();
+
     //---------------------------------- GPU --------------------------------------------------------------
 
-    float * d_Px_ptr;
-    float * d_Py_ptr;
-    float * d_prevPx_ptr;
-    float * d_prevPy_ptr;
-    float * d_Vx_ptr;
-    float * d_Vy_ptr;
+
+    ParticlesData ** m_particlesData;
+
+    //thrust::device_vector<float> hello;
 
     void initData();
-
-    void hashOccSort();
-
-    void addParticle(float P_x, float P_y, float V_x, float V_y);
-
-    void castPointers();
 
     void simulate();
 
@@ -305,15 +302,7 @@ public:
     void clearMem();
 
 protected: // data
-    // CPU data
-    float * m_hPos;
-    float * m_hPrevPos;
-    float * m_hVel;
 
-    // GPU data
-    float * m_dPos;
-    float * m_dPrevPos;
-    float * m_dVel;
 
     uint * d_hash_ptr;
     uint * d_cellOcc_ptr;
@@ -321,16 +310,16 @@ protected: // data
 
     uint m_posVbo;
 
-    int m_numPoints = 0;
+    int m_numPoints = 10000;
     int m_gridResolution = 4;
-    float m_interactionRadius = 0.05f;
+    int nCells = m_gridResolution*m_gridResolution;
     float m_timestep = 1.0f;
     bool m_started = false;
 
 
 private:
     /// Keep track of whether this has been initialised - otherwise it won't be ready to draw!
-    bool m_isInit;
+    bool m_isInit = false;
 
     /// The time since the object was initialised, which is used for animation purposes
     double m_startTime;

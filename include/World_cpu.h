@@ -5,8 +5,8 @@
 /// \date 26/4/16 Updated to NCCA Coding standard
 /// Revision History : See https://github.com/TomCollingwood/ParticlePanic
 
-#ifndef _WORLD_H_
-#define _WORLD_H_
+#ifndef _WORLDCPU_H_
+#define _WORLDCPU_H_
 
 #include <sys/time.h>
 #include <stdlib.h>

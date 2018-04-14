@@ -15,70 +15,42 @@
 #include <thrust/tuple.h>
 #include <thrust/sort.h>
 
+#include "particles_data.cuh"
 
 extern "C"
 {
-    void cudaInit(int argc, char **argv);
+//    void cudaInit(int argc, char **argv);
 
     void allocateArray(void **devPtr, size_t size);
 
+    void initializeData(int _num_pointsX, int _num_pointsY, int _gridRes, ParticlesData ** _data);
+
     void hashOccSort(int _num_points,
                  int _gridRes,
-                 unsigned int * _d_hash_ptr,
-                 unsigned int * _d_cellOcc_ptr,
-                 unsigned int * _d_scatterAdd_ptr,
-                 float * _Px,
-                 float * _Py,
-                 float * _prevPx,
-                 float * _prevPy,
-                 float * _Vx,
-                 float * _Vy);
+                 ParticlesData * _data);
 
     void viscosity(unsigned int _N,
                    unsigned int _gridRes,
                    float _iRadius,
                    float _timestep,
-                   float *_P_x,
-                   float *_P_y,
-                   float *_V_x,
-                   float *_V_y,
-                   unsigned int *_d_hash,
-                   unsigned int *_d_cellOcc,
-                   unsigned int *_d_scatterAdd);
+                   ParticlesData * _data);
 
     void integrate(unsigned int _N,
                    float _timestep,
-                   float * _P_x,
-                   float * _P_y,
-                   float * _prevP_x,
-                   float * _prevP_y,
-                   float * _V_x,
-                   float * _V_y);
+                   ParticlesData * _data);
 
-    void densityD(unsigned int _N,
+    void density(unsigned int _N,
                   unsigned int _gridRes,
                   float _iRadius,
                   float _timestep,
-                  float * _P_x,
-                  float * _P_y,
-                  float * _V_x,
-                  float * _V_y,
-                  unsigned int * _d_hash,
-                  unsigned int * _d_cellOcc,
-                  unsigned int * _d_scatterAdd);
+                  ParticlesData * _data);
 
     void updateVelocity(unsigned int _N,
                         float _timestep,
-                        float *_P_x,
-                        float *_P_y,
-                        float *_prevP_x,
-                        float *_prevP_y,
-                        float *_V_x,
-                        float *_V_y);
+                        ParticlesData * _data);
 
     void addGravity(unsigned int _N,
-                    float *_V_x,
-                    float *_V_y);
+                    ParticlesData * _data);
 
 }
 

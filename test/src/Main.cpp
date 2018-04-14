@@ -36,7 +36,7 @@
 #include "World_cpu.h"
 #include "World_gpu.h"
 
-class WorldGPU;
+//class WorldGPU; //---------------------------------- <- changed
 
 // Change this if you want something different.
 #define WINDOW_TITLE "ParticlePanic"
@@ -137,12 +137,13 @@ Uint32 timerCallback(Uint32 interval, void *) {
 
     }
 
-    if(m_worldGPU != NULL)
+    if(m_worldGPU != NULL && m_worldGPU->isinit())
     {
         m_worldGPU->simulate();
     }
 
     ++frame;
+    std::cout<<frame<<'\n'<<std::endl;
     return interval;
 }
 
@@ -170,7 +171,6 @@ int main( int argc, char* args[] ) {
     // We should now be ready to use OpenGL
     // This object holds our World. It needs to be initialised before it can be drawn.
     m_worldCPU = new WorldCPU();
-
     m_worldGPU = new WorldGPU();
 
     toolbar = new Toolbar();

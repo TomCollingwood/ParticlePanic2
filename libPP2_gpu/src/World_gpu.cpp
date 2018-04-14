@@ -4,7 +4,7 @@
 
 #include "include/World_gpu.h"
 #include "include/World_gpu.cuh"
-#include "include/particles_kernel_impl.cuh"
+#include "include/particles_kernel.cuh"
 
 WorldGPU::WorldGPU() :
   m_isInit(false),
@@ -1425,4 +1425,45 @@ void WorldGPU::decrease2DResolutionWORLD()
     --m_render2DResolution;
   m_render2dwidth=m_gridwidth*m_render2DResolution;
   m_render2dheight=m_gridheight*m_render2DResolution;
+}
+
+void WorldGPU::initData()
+{
+    initializeData(100,100,m_gridResolution,m_particlesData);
+    m_isInit = true;
+}
+
+void WorldGPU::simulate()
+{
+    addGravity(m_numPoints,*m_particlesData);
+
+    hashOccSort(m_numPoints,
+                m_gridResolution,
+                *m_particlesData);
+
+    viscosity(m_numPoints,
+              m_gridResolution,
+              m_interactionradius,
+              m_timestep,
+              *m_particlesData);
+
+    integrate(m_numPoints,
+              m_timestep,
+              *m_particlesData);
+
+    density(m_numPoints,
+            m_gridResolution,
+            m_interactionradius,
+            m_timestep,
+            *m_particlesData);
+
+    updateVelocity(m_numPoints,
+                   m_timestep,
+                   *m_particlesData);
+
+}
+
+bool WorldGPU::isinit()
+{
+    return m_isInit;
 }

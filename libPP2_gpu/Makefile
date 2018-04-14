@@ -67,6 +67,9 @@ OBJECTS       = cudaobj/particles_kernel.o \
 		obj/Vec3_gpu.o \
 		obj/World_gpu.o
 DIST          = include/particles_kernel_impl.cuh \
+		include/particles_kernel.cu \
+		include/particles_kernel.cuh \
+		include/particles_data.cuh \
 		.qmake.stash \
 		libPP2_gpu.pro include/MarchingAlgorithms_gpu.h \
 		include/Mat3_gpu.h \
@@ -75,7 +78,8 @@ DIST          = include/particles_kernel_impl.cuh \
 		include/Vec3_gpu.h \
 		include/World_gpu.h \
 		include/World_gpu.cuh \
-		include/particles_kernel_impl.cuh src/MarchingAlgorithms_gpu.cpp \
+		include/particles_kernel.cuh \
+		include/particles_data.cuh src/MarchingAlgorithms_gpu.cpp \
 		src/Mat3_gpu.cpp \
 		src/Particle_gpu.cpp \
 		src/ParticleProperties_gpu.cpp \
@@ -504,7 +508,7 @@ distdir: FORCE
 	$(COPY_FILE) --parents cudasrc/particles_kernel.cu cudasrc/World_gpu_cuda.cu $(DISTDIR)/
 	$(COPY_FILE) --parents cudaobj/particles_kernel.o cudaobj/World_gpu_cuda.o $(DISTDIR)/
 	$(COPY_FILE) --parents /opt/Qt5.9.0/5.9/gcc_64/mkspecs/features/data/dummy.cpp $(DISTDIR)/
-	$(COPY_FILE) --parents include/MarchingAlgorithms_gpu.h include/Mat3_gpu.h include/Particle_gpu.h include/ParticleProperties_gpu.h include/Vec3_gpu.h include/World_gpu.h include/World_gpu.cuh include/particles_kernel_impl.cuh $(DISTDIR)/
+	$(COPY_FILE) --parents include/MarchingAlgorithms_gpu.h include/Mat3_gpu.h include/Particle_gpu.h include/ParticleProperties_gpu.h include/Vec3_gpu.h include/World_gpu.h include/World_gpu.cuh include/particles_kernel.cuh include/particles_data.cuh $(DISTDIR)/
 	$(COPY_FILE) --parents src/MarchingAlgorithms_gpu.cpp src/Mat3_gpu.cpp src/Particle_gpu.cpp src/ParticleProperties_gpu.cpp src/Vec3_gpu.cpp src/World_gpu.cpp $(DISTDIR)/
 
 
@@ -599,7 +603,9 @@ obj/World_gpu.o: src/World_gpu.cpp include/World_gpu.h \
 		include/Particle_gpu.h \
 		include/ParticleProperties_gpu.h \
 		include/MarchingAlgorithms_gpu.h \
-		include/World_gpu.cuh
+		include/World_gpu.cuh \
+		include/particles_data.cuh \
+		include/particles_kernel.cuh
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o obj/World_gpu.o src/World_gpu.cpp
 
 ####### Install

@@ -18,7 +18,8 @@ INCLUDEPATH += ./include ${CUDA_PATH}/include ${CUDA_PATH}/include/cuda ${CUDA_P
 
 HEADERS += ./include/*.h \
     include/World_gpu.cuh \
-    include/particles_kernel_impl.cuh
+    include/particles_kernel.cuh \
+    include/particles_data.cuh
 
 # Include source files
 SOURCES += src/*.cpp
@@ -100,4 +101,7 @@ QMAKE_EXTRA_TARGETS += includeinstall
 POST_TARGETDEPS += includeinstall
 
 DISTFILES += \
-    include/particles_kernel_impl.cuh
+    include/particles_kernel_impl.cuh \
+    include/particles_kernel.cu \
+    include/particles_kernel.cuh \
+    include/particles_data.cuh

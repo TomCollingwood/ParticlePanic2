@@ -18,6 +18,8 @@
 #include <thrust/tuple.h>
 #include <thrust/sort.h>
 
+#include "particles_kernel.cuh"
+
 /**
   * Find the cell hash of each point. The hash is returned as the mapping of a point index to a cell.
   * If the point isn't inside any cell, it is set to NULL_HASH. This may have repercussions later in
@@ -30,8 +32,8 @@
   * \param res The resolution of our grid.
   */
 __global__ void pointHash2D(unsigned int *hash,
-                          const float *Px,
-                          const float *Py,
+                          float *Px,
+                          float *Py,
                           const unsigned int N,
                           const unsigned int res) {
     // Compute the index of this thread: i.e. the point we are testing
@@ -45,20 +47,28 @@ __global__ void pointHash2D(unsigned int *hash,
         gridPos[1] = floor(Py[idx] * res);
         //gridPos[2] = floor(Pz[idx] * res);
 
-        // Test to see if all of the points are inside the grid
-        bool isInside = true;
-        unsigned int i;
-        for (i=0; i<3; ++i)
-            if ((gridPos[i] < 0) || (gridPos[i] > res)) {
-                isInside = false;
-            }
+
+        if (gridPos[0] < 0)
+        {
+            Px[idx] = 0.0f;
+        }
+        else if(gridPos[0] > res)
+        {
+            Px[idx] = 1.0f;
+        }
+
+        if (gridPos[1] < 0)
+        {
+            Py[idx] = 0.0f;
+        }
+        else if(gridPos[1] > res)
+        {
+            Py[idx] = 1.0f;
+        }
 
         // Write out the hash value if the point is within range [0,1], else write NULL_HASH
-        if (isInside) {
-            hash[idx] = gridPos[0] * res + gridPos[1];
-        } else {
-            hash[idx] = UINT_MAX;
-        }
+        hash[idx] = gridPos[0] * res + gridPos[1];
+
         // Uncomment the lines below for debugging. Not recommended for 4mil points!
         //printf("pointHash<<<%d>>>: P=[%f,%f,%f] gridPos=[%d,%d,%d] hash=%d\n",
         //       idx, Px[idx], Py[idx], Pz[idx],
@@ -171,7 +181,10 @@ __global__ void densityD(unsigned int _N,
 
     unsigned int hashCentre =  _d_hash[idx];
 
-    unsigned int imin, imax, jmin, jmax;
+    int imin = -1;
+    int imax = 1;
+    int jmin = -1;
+    int jmax = 1;
     if(hashCentre%_gridRes ==0) imin=0;
     if(hashCentre% _gridRes == _gridRes-1) imax=0;
 
