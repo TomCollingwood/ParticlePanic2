@@ -91,7 +91,7 @@ void WorldGPU::init() {
   m_camerarotatey=0.0f;
   m_camerarotatex=0.0f;
 
-  m_isInit = true;
+  //m_isInit = true;
 }
 
 void WorldGPU::resizeWorld(int w, int h)
@@ -1429,37 +1429,49 @@ void WorldGPU::decrease2DResolutionWORLD()
 
 void WorldGPU::initData()
 {
-    initializeData(100,100,m_gridResolution,m_particlesData);
+    m_particlesData = initializeData(2,2,m_gridResolution);
     m_isInit = true;
 }
 
 void WorldGPU::simulate()
 {
-    addGravity(m_numPoints,*m_particlesData);
+    addGravity(m_numPoints,m_particlesData);
 
     hashOccSort(m_numPoints,
                 m_gridResolution,
-                *m_particlesData);
+                m_particlesData);
+
+//    pointHash(m_numPoints,
+//              m_gridResolution,
+//              m_particlesData);
+
+//    sortHash(m_particlesData);
+
+//    countCellOcc(m_numPoints,
+//                 m_gridResolution,
+//                 m_particlesData);
+
+//    exclusiveScan(m_particlesData);
 
     viscosity(m_numPoints,
               m_gridResolution,
               m_interactionradius,
               m_timestep,
-              *m_particlesData);
+              m_particlesData);
 
     integrate(m_numPoints,
               m_timestep,
-              *m_particlesData);
+              m_particlesData);
 
     density(m_numPoints,
             m_gridResolution,
             m_interactionradius,
             m_timestep,
-            *m_particlesData);
+            m_particlesData);
 
     updateVelocity(m_numPoints,
                    m_timestep,
-                   *m_particlesData);
+                   m_particlesData);
 
 }
 

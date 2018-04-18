@@ -20,6 +20,17 @@
 
 #include "particles_kernel.cuh"
 
+#define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
+inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
+{
+   if (code != cudaSuccess)
+   {
+      fprintf(stderr,"GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
+      if (abort) exit(code);
+   }
+}
+
+
 /**
   * Find the cell hash of each point. The hash is returned as the mapping of a point index to a cell.
   * If the point isn't inside any cell, it is set to NULL_HASH. This may have repercussions later in
@@ -42,37 +53,24 @@ __global__ void pointHash2D(unsigned int *hash,
     if (idx < N) {
         // Note that finding the grid coordinates are much simpler if the grid is over the range [0,1] in
         // each dimension and the points are also in the same space.
+
+        float low = 0.0f;
+        float high = 1.0f;
+        Px[idx] = Px[idx] < low ? low : (Px[idx] > high ? high : Px[idx]);
+        Py[idx] = Py[idx] < low ? low : (Py[idx] > high ? high : Py[idx]);
+
         int gridPos[2];
-        gridPos[0] = floor(Px[idx] * res);
-        gridPos[1] = floor(Py[idx] * res);
+        gridPos[0] = floor(Px[idx] * float(res));
+        gridPos[1] = floor(Py[idx] * float(res));
         //gridPos[2] = floor(Pz[idx] * res);
-
-
-        if (gridPos[0] < 0)
-        {
-            Px[idx] = 0.0f;
-        }
-        else if(gridPos[0] > res)
-        {
-            Px[idx] = 1.0f;
-        }
-
-        if (gridPos[1] < 0)
-        {
-            Py[idx] = 0.0f;
-        }
-        else if(gridPos[1] > res)
-        {
-            Py[idx] = 1.0f;
-        }
 
         // Write out the hash value if the point is within range [0,1], else write NULL_HASH
         hash[idx] = gridPos[0] * res + gridPos[1];
 
         // Uncomment the lines below for debugging. Not recommended for 4mil points!
-        //printf("pointHash<<<%d>>>: P=[%f,%f,%f] gridPos=[%d,%d,%d] hash=%d\n",
-        //       idx, Px[idx], Py[idx], Pz[idx],
-        //       gridPos[0], gridPos[1], gridPos[2], hash[idx]);
+        printf("pointHash<<<%d>>>: P=[%f,%f] gridPos=[%d,%d] hash=%d\n",
+               idx, Px[idx], Py[idx],
+               gridPos[0], gridPos[1], hash[idx]);
     }
 }
 

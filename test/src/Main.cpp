@@ -137,13 +137,10 @@ Uint32 timerCallback(Uint32 interval, void *) {
 
     }
 
-    if(m_worldGPU != NULL && m_worldGPU->isinit())
-    {
-        m_worldGPU->simulate();
-    }
 
-    ++frame;
-    std::cout<<frame<<'\n'<<std::endl;
+
+    //++frame;
+    //std::cout<<frame<<'\n'<<std::endl;
     return interval;
 }
 
@@ -244,6 +241,15 @@ int main( int argc, char* args[] ) {
     //While application is running
     while( !quit )
     {
+
+        if(m_worldGPU != NULL && m_worldGPU->isinit())
+        {
+            m_worldGPU->simulate();
+
+            ++frame;
+            std::cout<<frame<<'\n'<<std::endl;
+        }
+
         //Handle events on queue
         while( SDL_PollEvent( &e ) != 0 )
         {

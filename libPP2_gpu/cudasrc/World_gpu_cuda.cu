@@ -21,6 +21,16 @@
 #include "particles_kernel.cuh"
 #include "particles_data.cuh"
 
+#define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
+inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
+{
+   if (code != cudaSuccess)
+   {
+      fprintf(stderr,"GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
+      if (abort) exit(code);
+   }
+}
+
 extern "C"
 {
 
@@ -43,35 +53,97 @@ extern "C"
         cudaMalloc(devPtr, size);
     }
 
-    void initializeData(int _num_pointsX, int _num_pointsY, int _gridRes, ParticlesData ** _data)
+    ParticlesData * initializeData(int _num_pointsX, int _num_pointsY, int _gridRes)
     {
-        (*_data) = new ParticlesData();
+        // Todo: make factory method
+        ParticlesData * _data = new ParticlesData();
 
         int nCells = _gridRes*_gridRes;
         int nParticles = _num_pointsX*_num_pointsY;
 
-        (*_data)->d_Px.resize(nParticles);
-        (*_data)->d_Py.resize(nParticles);
-        (*_data)->d_prevPx.resize(nParticles);
-        (*_data)->d_prevPy.resize(nParticles);
-        (*_data)->d_Vx.resize(nParticles,0.0f);
-        (*_data)->d_Vy.resize(nParticles,0.0f);
+        _data->d_Px.resize(nParticles);
+        _data->d_Py.resize(nParticles);
+        _data->d_prevPx.resize(nParticles);
+        _data->d_prevPy.resize(nParticles);
+        _data->d_Vx.resize(nParticles,0.0f);
+        _data->d_Vy.resize(nParticles,0.0f);
+        _data->d_indexes.resize(nParticles,0);
+        gpuErrchk( cudaPeekAtLastError() );
+        // Todo: use host vector first then copy to device vector thrust co
 
         for(int x = 0; x<_num_pointsX; ++x)
         {
             for(int y=0; y<_num_pointsY; ++y)
             {
-                (*_data)->d_Px[x*_num_pointsX + y]=0.0f+0.01f*x;
-                (*_data)->d_Py[x*_num_pointsX + y]=0.0f+0.01f*y;
-                (*_data)->d_prevPx[x*_num_pointsX + y]=0.0f+0.01f*x;
-                (*_data)->d_prevPy[x*_num_pointsX + y]=0.0f+0.01f*y;
+                _data->d_Px[x*_num_pointsX + y]=0.25f+0.55f*x;
+                _data->d_Py[x*_num_pointsX + y]=0.25f+0.5f*y;
+                _data->d_prevPx[x*_num_pointsX + y]=0.25f+0.5f*x;
+                _data->d_prevPy[x*_num_pointsX + y]=0.25f+0.5f*y;
 //                (*_data)->d_Vx[x*_num_pointsX + y]=0.0f;
 //                (*_data)->d_Vy[x*_num_pointsX + y]=0.0f;
             }
         }
-        (*_data)->d_hash.resize(nParticles,0);
-        (*_data)->d_cellOcc.resize(nCells,0);
-        (*_data)->d_scatterAdd.resize(nCells,0);
+        for(int i=0; i<nParticles; ++i)
+        {
+            _data->d_indexes[i]=i;
+        }
+        gpuErrchk( cudaPeekAtLastError() );
+
+        _data->d_hash.resize(nParticles,0);
+        _data->d_cellOcc.resize(nCells,0);
+        _data->d_scatterAdd.resize(nCells,0);
+
+        return _data;
+    }
+
+    void pointHash(int _num_points,
+                 int _gridRes,
+                 ParticlesData * _data
+                 )
+    {
+        if(_num_points==0) return;
+        unsigned int nThreads = 1024;
+        unsigned int nBlocks = _num_points / nThreads + 1;
+        unsigned int nCells = _gridRes*_gridRes;
+
+        gpuErrchk( cudaPeekAtLastError() );
+
+        pointHash2D<<<nBlocks, nThreads>>>(thrust::raw_pointer_cast(_data->d_hash.data()),
+                                           thrust::raw_pointer_cast(_data->d_Px.data()),
+                                           thrust::raw_pointer_cast(_data->d_Py.data()),
+                                           _num_points,
+                                           _gridRes);
+
+        gpuErrchk( cudaPeekAtLastError() );
+    }
+
+    void sortHash(ParticlesData * _data)
+    {
+        auto tuple = thrust::make_tuple( _data->d_Px.begin(), _data->d_Py.begin(), _data->d_Vx.begin(), _data->d_Vy.begin(), _data->d_prevPx.begin(), _data->d_prevPy.begin());
+        gpuErrchk( cudaPeekAtLastError() );
+        auto zippy = thrust::make_zip_iterator(tuple);
+        gpuErrchk( cudaPeekAtLastError() );
+        thrust::sort_by_key(_data->d_hash.begin(), _data->d_hash.end(), zippy); // bad alloc here
+        gpuErrchk( cudaPeekAtLastError() );
+    }
+
+    void countCellOcc(int _num_points,
+                   int _gridRes,
+                   ParticlesData * _data)
+    {
+        if(_num_points==0) return;
+        unsigned int nThreads = 1024;
+        unsigned int nBlocks = _num_points / nThreads + 1;
+        unsigned int nCells = _gridRes*_gridRes;
+        countCellOccupancyD<<<nBlocks, nThreads>>>((uint *)thrust::raw_pointer_cast(_data->d_cellOcc.data()),
+                                                   (uint *)thrust::raw_pointer_cast(_data->d_hash.data()),
+                                                   nCells,
+                                                   _num_points);
+    }
+
+    void exclusiveScan(ParticlesData * _data)
+    {
+        thrust::exclusive_scan(_data->d_cellOcc.begin(),_data->d_cellOcc.end(),_data->d_scatterAdd.begin());
     }
 
     void hashOccSort(int _num_points,
@@ -84,29 +156,37 @@ extern "C"
         unsigned int nBlocks = _num_points / nThreads + 1;
         unsigned int nCells = _gridRes*_gridRes;
 
+        gpuErrchk( cudaPeekAtLastError() );
+
         pointHash2D<<<nBlocks, nThreads>>>(thrust::raw_pointer_cast(_data->d_hash.data()),
                                            thrust::raw_pointer_cast(_data->d_Px.data()),
                                            thrust::raw_pointer_cast(_data->d_Py.data()),
                                            _num_points,
                                            _gridRes);
 
+        gpuErrchk( cudaPeekAtLastError() );
         cudaThreadSynchronize();
+        //if(cudaSuccess==cudaThreadSynchronize()) std::cout<<"it works"<<std::endl;
 
+        gpuErrchk( cudaPeekAtLastError() ); // crashes here
         auto tuple = thrust::make_tuple( _data->d_Px.begin(), _data->d_Py.begin(), _data->d_Vx.begin(), _data->d_Vy.begin(), _data->d_prevPx.begin(), _data->d_prevPy.begin());
+        gpuErrchk( cudaPeekAtLastError() );
         auto zippy = thrust::make_zip_iterator(tuple);
-        thrust::sort_by_key(_data->d_hash.begin(), _data->d_hash.end(), zippy); // bad alloc here
+        gpuErrchk( cudaPeekAtLastError() );
+        thrust::sort_by_key(_data->d_hash.begin(), _data->d_hash.end(), thrust::make_zip_iterator(thrust::make_tuple( _data->d_Px.begin(), _data->d_Py.begin(), _data->d_Vx.begin(), _data->d_Vy.begin(), _data->d_prevPx.begin(), _data->d_prevPy.begin()))); // bad alloc here
 
+        gpuErrchk( cudaPeekAtLastError() );
         cudaThreadSynchronize();
-
-        thrust::exclusive_scan(_data->d_cellOcc.begin(),_data->d_cellOcc.end(),_data->d_scatterAdd.begin());
-
-        cudaThreadSynchronize();
-
+        gpuErrchk( cudaPeekAtLastError() );
         countCellOccupancyD<<<nBlocks, nThreads>>>((uint *)thrust::raw_pointer_cast(_data->d_cellOcc.data()),
                                                    (uint *)thrust::raw_pointer_cast(_data->d_hash.data()),
                                                    nCells,
                                                    _num_points);
-
+        gpuErrchk( cudaPeekAtLastError() );
+        cudaThreadSynchronize();
+        gpuErrchk( cudaPeekAtLastError() );
+        thrust::exclusive_scan(_data->d_cellOcc.begin(),_data->d_cellOcc.end(),_data->d_scatterAdd.begin());
+        gpuErrchk( cudaPeekAtLastError() );
         cudaThreadSynchronize();
     }
 
@@ -131,6 +211,7 @@ extern "C"
                                         (uint *)thrust::raw_pointer_cast(_data->d_hash.data()),
                                         (uint *)thrust::raw_pointer_cast(_data->d_cellOcc.data()),
                                         (uint *)thrust::raw_pointer_cast(_data->d_scatterAdd.data()));
+        gpuErrchk( cudaPeekAtLastError() );
     }
 
     void integrate(unsigned int _N,

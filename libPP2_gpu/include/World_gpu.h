@@ -289,7 +289,7 @@ public:
     //---------------------------------- GPU --------------------------------------------------------------
 
 
-    ParticlesData ** m_particlesData;
+    ParticlesData * m_particlesData;
 
     //thrust::device_vector<float> hello;
 
@@ -310,7 +310,7 @@ protected: // data
 
     uint m_posVbo;
 
-    int m_numPoints = 10000;
+    int m_numPoints = 4;
     int m_gridResolution = 4;
     int nCells = m_gridResolution*m_gridResolution;
     float m_timestep = 1.0f;
@@ -343,7 +343,9 @@ private:
     float m_halfwidth, m_halfheight;
     float m_interactionradius;
     float m_squaresize;
-    int m_gridheight, m_gridwidth, m_griddepth;
+    int m_gridheight;
+    int m_gridwidth;
+    int m_griddepth;
     int m_pixelwidth, m_pixelheight;
 
     // RENDERING ATTRIBUTES

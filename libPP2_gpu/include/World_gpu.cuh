@@ -23,11 +23,23 @@ extern "C"
 
     void allocateArray(void **devPtr, size_t size);
 
-    void initializeData(int _num_pointsX, int _num_pointsY, int _gridRes, ParticlesData ** _data);
+    ParticlesData * initializeData(int _num_pointsX, int _num_pointsY, int _gridRes);
 
     void hashOccSort(int _num_points,
                  int _gridRes,
                  ParticlesData * _data);
+
+    void pointHash(int _num_points,
+                   int _gridRes,
+                   ParticlesData * _data);
+
+    void sortHash(ParticlesData * _data);
+
+    void countCellOcc(int _num_points,
+                   int _gridRes,
+                   ParticlesData * _data);
+
+    void exclusiveScan(ParticlesData * _data);
 
     void viscosity(unsigned int _N,
                    unsigned int _gridRes,
