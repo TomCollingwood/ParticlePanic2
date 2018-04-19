@@ -51,10 +51,8 @@ OBJECTS_DIR   = obj/
 
 ####### Files
 
-SOURCES       = src/Toolbar.cpp \
-		src/Main.cpp 
-OBJECTS       = obj/Toolbar.o \
-		obj/Main.o
+SOURCES       = src/Main.cpp 
+OBJECTS       = obj/Main.o
 DIST          = /opt/Qt5.9.0/5.9/gcc_64/mkspecs/features/spec_pre.prf \
 		/opt/Qt5.9.0/5.9/gcc_64/mkspecs/common/unix.conf \
 		/opt/Qt5.9.0/5.9/gcc_64/mkspecs/common/linux.conf \
@@ -234,9 +232,7 @@ DIST          = /opt/Qt5.9.0/5.9/gcc_64/mkspecs/features/spec_pre.prf \
 		/opt/Qt5.9.0/5.9/gcc_64/mkspecs/features/exceptions.prf \
 		/opt/Qt5.9.0/5.9/gcc_64/mkspecs/features/yacc.prf \
 		/opt/Qt5.9.0/5.9/gcc_64/mkspecs/features/lex.prf \
-		test.pro include/Toolbar.h \
-		include/Commands.h src/Toolbar.cpp \
-		src/Main.cpp
+		test.pro  src/Main.cpp
 QMAKE_TARGET  = test
 DESTDIR       = 
 TARGET        = test
@@ -628,8 +624,7 @@ distdir: FORCE
 	@test -d $(DISTDIR) || mkdir -p $(DISTDIR)
 	$(COPY_FILE) --parents $(DIST) $(DISTDIR)/
 	$(COPY_FILE) --parents /opt/Qt5.9.0/5.9/gcc_64/mkspecs/features/data/dummy.cpp $(DISTDIR)/
-	$(COPY_FILE) --parents include/Toolbar.h include/Commands.h $(DISTDIR)/
-	$(COPY_FILE) --parents src/Toolbar.cpp src/Main.cpp $(DISTDIR)/
+	$(COPY_FILE) --parents src/Main.cpp $(DISTDIR)/
 
 
 clean: compiler_clean 
@@ -674,29 +669,11 @@ compiler_clean: compiler_moc_predefs_clean
 
 ####### Compile
 
-obj/Toolbar.o: src/Toolbar.cpp include/Toolbar.h \
-		../include/World_cpu.h \
+obj/Main.o: src/Main.cpp ../include/World_cpu.h \
 		../include/Vec3_cpu.h \
 		../include/Mat3_cpu.h \
 		../include/Particle_cpu.h \
-		../include/ParticleProperties_cpu.h \
-		../include/MarchingAlgorithms_cpu.h
-	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o obj/Toolbar.o src/Toolbar.cpp
-
-obj/Main.o: src/Main.cpp include/Toolbar.h \
-		../include/World_cpu.h \
-		../include/Vec3_cpu.h \
-		../include/Mat3_cpu.h \
-		../include/Particle_cpu.h \
-		../include/ParticleProperties_cpu.h \
-		../include/MarchingAlgorithms_cpu.h \
-		include/Commands.h \
-		../include/World_gpu.h \
-		../include/Vec3_gpu.h \
-		../include/Mat3_gpu.h \
-		../include/Particle_gpu.h \
-		../include/ParticleProperties_gpu.h \
-		../include/MarchingAlgorithms_gpu.h
+		../include/ParticleProperties_cpu.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o obj/Main.o src/Main.cpp
 
 ####### Install

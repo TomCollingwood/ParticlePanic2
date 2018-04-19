@@ -8,12 +8,9 @@ OBJECTS_DIR = obj
 QMAKE_CXXFLAGS += -std=c++11 -Wall -Wextra -pedantic
 
 SOURCES += \
-    src/Toolbar.cpp \
     src/Main.cpp
 
-HEADERS += \
-    include/Toolbar.h \
-    include/Commands.h
+HEADERS +=
 
 LIBS += -L/usr/local/lib -L../lib -L$$LIB_INSTALL_DIR -lPP2_cpu -lPP2_gpu
 

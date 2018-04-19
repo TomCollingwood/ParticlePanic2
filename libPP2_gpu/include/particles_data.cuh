@@ -44,8 +44,6 @@ public:
     thrust::device_vector<uint> d_hash;
     thrust::device_vector<uint> d_cellOcc;
     thrust::device_vector<uint> d_scatterAdd;
-
-    thrust::device_vector<uint> d_indexes;
 };
 
 #endif

@@ -749,8 +749,7 @@ obj/World_cpu.o: src/World_cpu.cpp include/World_cpu.h \
 		include/Vec3_cpu.h \
 		include/Mat3_cpu.h \
 		include/Particle_cpu.h \
-		include/ParticleProperties_cpu.h \
-		include/MarchingAlgorithms_cpu.h
+		include/ParticleProperties_cpu.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o obj/World_cpu.o src/World_cpu.cpp
 
 ####### Install

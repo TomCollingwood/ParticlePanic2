@@ -17,8 +17,8 @@
 
 #include "particles_data.cuh"
 
-extern "C"
-{
+//extern "C"
+//{
 //    void cudaInit(int argc, char **argv);
 
     void allocateArray(void **devPtr, size_t size);
@@ -64,6 +64,6 @@ extern "C"
     void addGravity(unsigned int _N,
                     ParticlesData * _data);
 
-}
+//}
 
 #endif

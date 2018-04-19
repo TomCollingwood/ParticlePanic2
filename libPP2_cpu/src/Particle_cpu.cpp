@@ -4,70 +4,30 @@
 
 #include "include/Particle_cpu.h"
 
-void Particle::drawParticle(const float _pointsize)
-{
-  if(!m_wall)
-  {
-    float fast=m_velocity.length()*5;
-
-    if(fast>1.0f) fast=1.0f;
-
-    if(m_properties->getColourEffect())
-      glColor3f(m_properties->getRed()+fast,m_properties->getGreen()+fast,m_properties->getBlue()+fast);
-    else
-      glColor3f(m_properties->getRed(),m_properties->getGreen(),m_properties->getBlue());
-  }
-  else
-  {
-    glColor3f(1.0f,0.0f,0.0f);
-  }
-
-  glMatrixMode(GL_MODELVIEW);
-
-  glPushMatrix();
-  glTranslatef(m_position[0], m_position[1], m_position[2]);
-
-  GLUquadricObj *quadric;
-  quadric = gluNewQuadric();
-  gluQuadricDrawStyle(quadric, GLU_FILL );
-  gluSphere( quadric , 0.25*(_pointsize/10.f) , 16 , 16 );
-  gluDeleteQuadric(quadric);
-
-  glPopMatrix();
-}
-
-void Particle::updatePosition(double _elapsedtime, float _halfheight, float _halfwidth, bool is3D)
+void Particle::updatePosition(float _elapsedtime)
 {
   m_position+=m_velocity*_elapsedtime;
 
-  float smallen = 1.0f;
-  if(is3D) smallen = 0.4f;
-
-  if(m_position[0]>(_halfwidth-0.5f)*smallen)
+  if(m_position[0]>1.0f)
   {
-    m_position[0] = (_halfwidth-0.5f)*smallen;
+    m_position[0] = 1.0f;
+    m_velocity[0]= -m_velocity[0]*0.5f;
   }
-  else if(m_position[0]<(-_halfwidth+0.5f)*smallen)
+  else if(m_position[0]<0.0f)
   {
-    m_position[0]= (-_halfwidth+0.5f)*smallen;
+    m_position[0]= 0.0f;
+    m_velocity[0]= -m_velocity[0]*0.5f;
   }
-  if(m_position[1]<-_halfheight+0.5f)
+  if(m_position[1]<0.0f)
   {
-    m_position[1]=-_halfheight+0.5f;
+    m_position[1]=0.0f;
+    m_velocity[1]= -m_velocity[1]*0.5f;
   }
-  else if (m_position[1]>_halfheight-1.5f)
+  else if (m_position[1]>1.0f)
   {
-    m_position[1]=_halfheight-1.5f;
+    m_position[1]=1.0f;
+    m_velocity[1]= -m_velocity[1]*0.5f;
   }
-  if(m_position[2]>(_halfwidth-0.5f))
-  {
-    m_position[2] = (_halfwidth-0.5f)*smallen;
-  }
-  else if(m_position[2]<(-_halfwidth+0.5f))
-  {
-    m_position[2]= (-_halfwidth+0.5f)*smallen;
-  }
-  // */
 }
 
 Vec3 Particle::getPosition() const
@@ -96,38 +56,30 @@ void Particle::addVelocity(Vec3 _addedvel)
 }
 
 
-void Particle::addPosition(Vec3 _pos, float _halfheight, float _halfwidth, bool is3D)
+void Particle::addPosition(Vec3 _pos)
 {
-  float smallen = 1.0f;
-  if(is3D) smallen = 0.4f;
-
   m_position+=_pos;
 
-  if(m_position[0]>(_halfwidth-0.5f)*smallen)
+  if(m_position[0]>1.0f)
   {
-    m_position[0] = (_halfwidth-0.5f)*smallen;
+    m_position[0] = 1.0f;
+    m_velocity[0] = -m_velocity[0]*0.5f;
   }
-  else if(m_position[0]<(-_halfwidth+0.5f)*smallen)
+  else if(m_position[0]<0.0f)
   {
-    m_position[0]= (-_halfwidth+0.5f)*smallen;
+    m_position[0]= 0.0f;
+    m_velocity[0] = -m_velocity[0]*0.5f;
   }
-  if(m_position[1]<-_halfheight+0.5f)
+  if(m_position[1]<0.0f)
   {
-    m_position[1]=-_halfheight+0.5f;
+    m_position[1]=0.0f;
+    m_velocity[1] = -m_velocity[1]*0.5f;
   }
-  else if (m_position[1]>_halfheight-1.5f)
+  else if (m_position[1]>1.0f)
   {
-    m_position[1]=_halfheight-1.5f;
+    m_position[1]=1.0f;
+    m_velocity[1] = -m_velocity[1]*0.5f;
   }
-  if(m_position[2]>(_halfwidth-0.5f)*smallen)
-  {
-    m_position[2] = (_halfwidth-0.5f)*smallen;
-  }
-  else if(m_position[2]<(-_halfwidth+0.5f)*smallen)
-  {
-    m_position[2]= (-_halfwidth+0.5f)*smallen;
-  }
-  // */
 }
 
 void Particle::updatePrevPosition()
