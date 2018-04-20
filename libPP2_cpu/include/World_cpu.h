@@ -60,6 +60,8 @@ public:
 
     void dumpToObj(const uint cnt);
 
+    void dumpToGeo(const uint cnt);
+
     void pointHash();
 
 

@@ -19,11 +19,10 @@
 
 //extern "C"
 //{
-//    void cudaInit(int argc, char **argv);
+    ParticlesData * initializeParticlesData(int _num_points, int _gridRes);
 
-    void allocateArray(void **devPtr, size_t size);
-
-    ParticlesData * initializeData(int _num_pointsX, int _num_pointsY, int _gridRes);
+    void dumpToGeo(ParticlesData *_data,
+                   const uint cnt);
 
     void hashOccSort(int _num_points,
                  int _gridRes,
@@ -63,7 +62,6 @@
 
     void addGravity(unsigned int _N,
                     ParticlesData * _data);
-
 //}
 
 #endif

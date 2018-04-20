@@ -15,18 +15,59 @@ WorldCPU::WorldCPU()
     Particle defaultparticle(Vec3(0.0f,0.0f,0.0f),&m_particleTypes[0]);
     m_particles.resize(m_num_points,defaultparticle);
 
-    //------------------DAMBREAKER 100----------------------
-    for(int x = 0; x<5; ++x)
+    srand(42);
+    if(m_num_points<=100)
     {
-        for(int y =0; y<20; ++y)
+    //------------------DAMBREAKER 100----------------------
+        for(int x = 0; x<5; ++x)
         {
-            float xr = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-            float yr = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-            xr = 0.5f-xr;
-            yr = 0.5f-yr;
-            m_particles[x+y*5].setPosition(Vec3(float(x)*(1.0f/20.0f)+xr*0.01f,
-                                                float(y)*(1.0f/20.0f)+yr*0.01f,
-                                                0.0f));
+            for(int y =0; y<20; ++y)
+            {
+                if(x+y*5 >= m_num_points) break;
+                float xr = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+                float yr = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+                xr = 0.5f-xr;
+                yr = 0.5f-yr;
+                m_particles[x+y*5].setPosition(Vec3(float(x)*(1.0f/20.0f)+xr*0.01f,
+                                                    float(y)*(1.0f/20.0f)+yr*0.01f,
+                                                    0.0f));
+            }
+        }
+    }
+    else if(m_num_points<=10000)
+    {
+    //------------------DAMBREAKER 10,000----------------------
+        for(int x = 0; x<50; ++x)
+        {
+            for(int y =0; y<200; ++y)
+            {
+                if(x+y*50 >= m_num_points) break;
+                float xr = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+                float yr = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+                xr = 0.5f-xr;
+                yr = 0.5f-yr;
+                m_particles[x+y*50].setPosition(Vec3(float(x)*(1.0f/200.0f)+xr*0.001f,
+                                                    float(y)*(1.0f/200.0f)+yr*0.001f,
+                                                    0.0f));
+            }
+        }
+    }
+    else if(m_num_points<=1000000)
+    {
+    //------------------DAMBREAKER 1,000,000----------------------
+        for(int x = 0; x<500; ++x)
+        {
+            for(int y =0; y<2000; ++y)
+            {
+                if(x+y*500 >= m_num_points) break;
+                float xr = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+                float yr = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+                xr = 0.5f-xr;
+                yr = 0.5f-yr;
+                m_particles[x+y*500].setPosition(Vec3(float(x)*(1.0f/2000.0f)+xr*0.0001f,
+                                                    float(y)*(1.0f/2000.0f)+yr*0.0001f,
+                                                    0.0f));
+            }
         }
     }
 }
@@ -50,6 +91,57 @@ void WorldCPU::dumpToObj(const uint cnt)
         ss << "v "<< m_particles[i].getPosition()[0] << " "
                   << m_particles[i].getPosition()[1] << " 0\n";
     }
+    file<<ss.rdbuf();
+    file.close();
+}
+
+void WorldCPU::dumpToGeo(const uint cnt)
+{
+    char fname[150];
+
+    std::sprintf(fname,"geo/SPH_GPU.%03d.geo",cnt);
+    // we will use a stringstream as it may be more efficient
+    std::stringstream ss;
+    std::ofstream file;
+    file.open(fname);
+    if (!file.is_open())
+    {
+        std::cerr << "failed to Open file "<<fname<<'\n';
+        exit(EXIT_FAILURE);
+    }
+    // write header see here http://www.sidefx.com/docs/houdini15.0/io/formats/geo
+    ss << "PGEOMETRY V5\n";
+    ss << "NPoints " << m_num_points << " NPrims 1\n";
+    ss << "NPointGroups 0 NPrimGroups 1\n";
+    // this is hard coded but could be flexible we have 1 attrib which is Colour
+    ss << "NPointAttrib 1  NVertexAttrib 0 NPrimAttrib 2 NAttrib 0\n";
+    // now write out our point attrib this case Cd for diffuse colour
+    ss <<"PointAttrib \n";
+    // default the colour to white
+    ss <<"Cd 3 float 1 1 1\n";
+    // now we write out the particle data in the format
+    // x y z 1 (attrib so in this case colour)
+    for(unsigned int i=0; i<m_num_points; ++i)
+    {
+        ss<<m_particles[i].getPosition()[0]<<" "<<m_particles[i].getPosition()[1]<<" "<<0 << " 1 ";
+        ss<<"("<<1<<" "<<1<<" "<<1<<")\n";
+    }
+
+    // now write out the index values
+    ss<<"PrimitiveAttrib\n";
+    ss<<"generator 1 index 1 location1\n";
+    ss<<"dopobject 1 index 1 /obj/AutoDopNetwork:1\n";
+    ss<<"Part "<<m_num_points<<" ";
+    for(size_t i=0; i<m_num_points; ++i)
+    {
+        ss<<i<<" ";
+    }
+    ss<<" [0	0]\n";
+    ss<<"box_object1 unordered\n";
+    ss<<"1 1\n";
+    ss<<"beginExtra\n";
+    ss<<"endExtra\n";
+    // dump string stream to disk;
     file<<ss.rdbuf();
     file.close();
 }
@@ -176,8 +268,10 @@ void WorldCPU::simulate() {
           Vec3 D = rij*(m_timestep*m_timestep*(P*(1.0f-q))+Pnear*(1.0f-q)*(1.0f-q));
           j->addPosition(D/2);
           dx-=(D/2);
+//          printf("HERE:Dx: %f, Dy: %f\n",D[0],D[1]);
         }
       }
+//      printf("HERE2:dx: %f, dy: %f\n",dx[0],dx[1]);
       i->addPosition(dx);
     }
     count++;

@@ -21,12 +21,22 @@ int main( int argc, char* args[] ) {
 
     m_worldCPU = new WorldCPU();
 
-    int num_frames = 300;
+    int num_frames = 60;
 
-    for(int i = 0; i<num_frames; ++i)
+    struct timeval tim;
+            double t1, t2, t3;
+            gettimeofday(&tim, NULL);
+
+    for(int i = 1; i<num_frames; ++i)
     {
+        gettimeofday(&tim, NULL);
+        t1=tim.tv_sec+(tim.tv_usec/1000000.0);
         m_worldCPU->simulate();
-        m_worldCPU->dumpToObj(i);
+        gettimeofday(&tim, NULL);
+        t2=tim.tv_sec+(tim.tv_usec/1000000.0);
+        t3 = t2-t1;
+        printf("Frame %d took %f seconds\n",i,t3);
+        m_worldCPU->dumpToGeo(i);
     }
 
     return EXIT_SUCCESS;

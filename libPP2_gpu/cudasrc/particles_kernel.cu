@@ -31,17 +31,6 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
 }
 
 
-/**
-  * Find the cell hash of each point. The hash is returned as the mapping of a point index to a cell.
-  * If the point isn't inside any cell, it is set to NULL_HASH. This may have repercussions later in
-  * the code.
-  * \param Px The array of x values
-  * \param Py The array of y values
-  * \param Pz the array of z values
-  * \param hash The array of hash output
-  * \param N The number of points (dimensions of Px,Py,Pz and hash)
-  * \param res The resolution of our grid.
-  */
 __global__ void pointHash2D(unsigned int *hash,
                           float *Px,
                           float *Py,
@@ -55,7 +44,7 @@ __global__ void pointHash2D(unsigned int *hash,
         // each dimension and the points are also in the same space.
 
         float low = 0.0f;
-        float high = 1.0f;
+        float high = 0.999f;
         Px[idx] = Px[idx] < low ? low : (Px[idx] > high ? high : Px[idx]);
         Py[idx] = Py[idx] < low ? low : (Py[idx] > high ? high : Py[idx]);
 
@@ -68,9 +57,9 @@ __global__ void pointHash2D(unsigned int *hash,
         hash[idx] = gridPos[0] * res + gridPos[1];
 
         // Uncomment the lines below for debugging. Not recommended for 4mil points!
-        printf("pointHash<<<%d>>>: P=[%f,%f] gridPos=[%d,%d] hash=%d\n",
-               idx, Px[idx], Py[idx],
-               gridPos[0], gridPos[1], hash[idx]);
+        // printf("pointHash<<<%d>>>: P=[%f,%f] gridPos=[%d,%d] hash=%d\n",
+        //     idx, Px[idx], Py[idx],
+        //     gridPos[0], gridPos[1], hash[idx]);
     }
 }
 
@@ -111,52 +100,38 @@ __global__ void viscosityD(unsigned int _N,
     uint idx = blockIdx.x * blockDim.x + threadIdx.x;
     if(idx > _N) return;
 
-    unsigned int hashCentre =  _d_hash[idx];
+    // int nCells = _gridRes*_gridRes;
 
-    unsigned int imin, imax, jmin, jmax;
-    if(hashCentre%_gridRes ==0) imin=0;
-    if(hashCentre% _gridRes == _gridRes-1) imax=0;
+    unsigned int hash =  _d_hash[idx];
+    unsigned int startIndex = _d_scatterAdd[hash];
+    unsigned int endIndex = startIndex + _d_cellOcc[hash];
+    if(endIndex>=_N) endIndex = _N-1;
 
-    if(hashCentre/ _gridRes==0) jmax = 0;
-    if(hashCentre/ _gridRes== _gridRes-1) jmin=0;
-
-    for(int i = imin; i<=imax; ++i)
+    for(int otherid = 0; otherid<_N;++otherid)
     {
-        for(int j = jmin; j<=jmax; ++j)
+        if(otherid>=_N) break;
+        float diffX = _P_x[otherid]-_P_x[idx];
+        float diffY = _P_y[otherid]-_P_y[idx];
+        float mag = sqrtf(diffX*diffX + diffY*diffY);
+        float q = mag / _iRadius;
+        if(q<1 && q!=0)
         {
-            if(i==0 && j==0) break;
-            unsigned int otherHash = (hashCentre+i)+j*_gridRes;
-            unsigned int startIndex = _d_scatterAdd[otherHash+1];
-            unsigned int howMany = _d_cellOcc[otherHash];
-
-            for(int otherid = startIndex; otherid<startIndex+howMany;++otherid)
+            float diffXnorm = diffX/mag;
+            float diffYnorm = diffY/mag;
+            float diffXV = _V_x[idx] - _V_x[otherid];
+            float diffYV = _V_y[idx] - _V_y[otherid];
+            float u = (diffXV*diffXnorm) + (diffYV*diffYnorm);
+            if(u>0)
             {
-                float diffX = _P_x[otherid]-_P_x[idx];
-                float diffY = _P_y[otherid]-_P_y[idx];
-                float mag = sqrtf(diffX*diffX + diffY*diffY);
-                float q = mag / _iRadius;
-                if(q<1 && q!=0)
-                {
-                    float diffXnorm = diffX/mag;
-                    float diffYnorm = diffY/mag;
-                    float diffXV = _V_x[idx] - _V_x[otherid];
-                    float diffYV = _V_y[idx] - _V_y[otherid];
-                    float u = (diffXV*diffXnorm) + (diffYV*diffYnorm);
-                    if(u>0)
-                    {
-                        float sig = 0.05f;
-                        float bet = 0.1f;
-                        float h = (1-q)*(sig*u + bet*u*u)*_timestep;
-                        float impulseX = diffXnorm*h;
-                        float impulseY = diffYnorm*h;
-                        _V_x[idx]= _V_x[idx] + impulseX;
-                        _V_y[idx]= _V_y[idx] + impulseY;
-                        atomicAdd(&(_V_x[idx]),-impulseX);
-                        atomicAdd(&(_V_y[idx]),-impulseY);
-                        atomicAdd(&(_V_x[otherid]),impulseX);
-                        atomicAdd(&(_V_y[otherid]),impulseY);
-                    }
-                }
+                float sig = 0.05f;
+                float bet = 0.1f;
+                float h = (1-q)*(sig*u + bet*u*u)*_timestep;
+                float impulseX = diffXnorm*h;
+                float impulseY = diffYnorm*h;
+                atomicAdd(&(_V_x[idx]),-impulseX);
+                atomicAdd(&(_V_y[idx]),-impulseY);
+                atomicAdd(&(_V_x[otherid]),impulseX);
+                atomicAdd(&(_V_y[otherid]),impulseY);
             }
         }
     }
@@ -177,44 +152,31 @@ __global__ void densityD(unsigned int _N,
     uint idx = blockIdx.x * blockDim.x + threadIdx.x;
     if(idx > _N) return;
 
-    unsigned int hashCentre =  _d_hash[idx];
+    // int nCells = _gridRes*_gridRes;
 
-    int imin = -1;
-    int imax = 1;
-    int jmin = -1;
-    int jmax = 1;
-    if(hashCentre%_gridRes ==0) imin=0;
-    if(hashCentre% _gridRes == _gridRes-1) imax=0;
-
-    if(hashCentre/ _gridRes==0) jmax = 0;
-    if(hashCentre/ _gridRes== _gridRes-1) jmin=0;
+    unsigned int hash =  _d_hash[idx];
+    unsigned int startIndex = _d_scatterAdd[hash];
+    unsigned int endIndex = startIndex+_d_cellOcc[hash];
+    if(endIndex>=_N) endIndex=_N-1;
 
     float density = 0.0f;
     float nearDensity = 0.0f;
 
-    for(int i = imin; i<=imax; ++i)
+    for(int otherid = 0; otherid<_N;++otherid)
     {
-        for(int j = jmin; j<=jmax; ++j)
+        if(otherid>=_N) break;
+        if(otherid<0) break;
+        float Rx = _P_x[otherid] - _P_x[idx];
+        float Ry = _P_y[otherid] - _P_y[idx];
+        float magR = sqrtf(Rx*Rx + Ry*Ry);
+        float q = magR / _iRadius;
+        if(q<1 && q!=0)
         {
-            if(i==0 && j==0) break;
-            unsigned int otherHash = (hashCentre+i)+j*_gridRes;
-            unsigned int startIndex = _d_scatterAdd[otherHash+1];
-            unsigned int howMany = _d_cellOcc[otherHash];
-
-            for(int otherid = startIndex; otherid<startIndex+howMany;++otherid)
-            {
-                float Rx = _P_x[otherid] - _P_x[idx];
-                float Ry = _P_y[otherid] - _P_y[idx];
-                float magR = sqrtf(Rx*Rx + Ry*Ry);
-                float q = magR / _iRadius;
-                if(q<1 && q!=0)
-                {
-                    density+=(1.0f-q)*(1.0f-q);
-                    nearDensity+=(1.0f-q)*(1.0f-q)*(1.0f-q);
-                }
-            }
+            density+=(1.0f-q)*(1.0f-q);
+            nearDensity+=(1.0f-q)*(1.0f-q)*(1.0f-q);
         }
     }
+
     float p0 = 5.0f;
     float k = 0.004f;
     float knear = 0.01f;
@@ -224,36 +186,29 @@ __global__ void densityD(unsigned int _N,
 
     float dx = 0.0f;
     float dy = 0.0f;
-    for(int i = imin; i<=imax; ++i)
-    {
-        for(int j = jmin; j<=jmax; ++j)
-        {
-            if(i==0 && j==0) break;
-            unsigned int otherHash = (hashCentre+i)+j*_gridRes;
-            unsigned int startIndex = _d_scatterAdd[otherHash+1];
-            unsigned int howMany = _d_cellOcc[otherHash];
 
-            for(int otherid = startIndex; otherid<startIndex+howMany;++otherid)
-            {
-                float Rx = _P_x[otherid] - _P_x[idx];
-                float Ry = _P_y[otherid] - _P_y[idx];
-                float magR = sqrtf(Rx*Rx + Ry*Ry);
-                float q = magR / _iRadius;
-                if(q<1 && q!=0)
-                {
-                    float Rxnorm = Rx / magR;
-                    float Rynorm = Ry / magR;
-                    float he = (_timestep*_timestep*(P*(1.0f-q))+Pnear*(1.0f-q)*(1.0f-q));
-                    float Dx = Rxnorm*he;
-                    float Dy = Rynorm*he;
-                    atomicAdd(&(_P_x[otherid]), Dx/2.0f);
-                    atomicAdd(&(_P_y[otherid]), Dy/2.0f);
-                    dx-=Dx/2.0f;
-                    dy-=Dy/2.0f;
-                }
-            }
+    for(int otherid = 0; otherid<_N;++otherid)
+    {
+        if(otherid>=_N) break;
+        if(otherid<0) break;
+        float Rx = _P_x[otherid] - _P_x[idx];
+        float Ry = _P_y[otherid] - _P_y[idx];
+        float magR = sqrtf(Rx*Rx + Ry*Ry);
+        float q = magR / _iRadius;
+        if(q<1 && q!=0)
+        {
+            float Rxnorm = Rx / magR;
+            float Rynorm = Ry / magR;
+            float he = (_timestep*_timestep*(P*(1.0f-q))+Pnear*(1.0f-q)*(1.0f-q));
+            float Dx = Rxnorm*he;
+            float Dy = Rynorm*he;
+            atomicAdd(&(_P_x[otherid]), Dx/2.0f);
+            atomicAdd(&(_P_y[otherid]), Dy/2.0f);
+            dx-=Dx/2.0f;
+            dy-=Dy/2.0f;
         }
     }
+
     atomicAdd(&(_P_x[idx]), dx);
     atomicAdd(&(_P_y[idx]), dy);
 }
@@ -273,15 +228,13 @@ __global__ void integrateD(unsigned int _N,
     _prevP_x[idx] = _P_x[idx];
     _prevP_y[idx] = _P_y[idx];
 
-    _P_x[idx] = _V_x[idx] * _timestep;
-    _P_y[idx] = _V_y[idx] * _timestep;
+    _P_x[idx] = _P_x[idx] + _V_x[idx] * _timestep;
+    _P_y[idx] = _P_y[idx] +_V_y[idx] * _timestep;
 
-    // boundaries
-    if(_P_x[idx]<0.0f) _P_x[idx]=0.0f;
-    if(_P_x[idx]>1.0f) _P_x[idx]=1.0f;
-    if(_P_y[idx]<0.0f) _P_y[idx]=0.0f;
-    if(_P_y[idx]>1.0f) _P_y[idx]=1.0f;
-
+    float low = 0.0f;
+    float high = 0.999f;
+    _P_x[idx] = _P_x[idx] < low ? low : (_P_x[idx] > high ? high : _P_x[idx]);
+    _P_y[idx] = _P_y[idx] < low ? low : (_P_y[idx] > high ? high : _P_y[idx]);
 }
 
 __global__ void updateVelocityD(unsigned int _N,
@@ -306,8 +259,20 @@ __global__ void addGravityD(unsigned int _N,
 {
     uint idx = blockIdx.x * blockDim.x + threadIdx.x;
     if(idx > _N) return;
-    _V_y[idx]+=-0.0098f;
+    _V_y[idx]+=-0.008f;
 }
 
+__global__ void boundaries(unsigned int _N,
+                           float * _P_x,
+                           float * _P_y)
+{
+    uint idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if(idx > _N) return;
+
+    float low = 0.0f;
+    float high = 1.0f;
+    _P_x[idx] = _P_x[idx] < low ? low : (_P_x[idx] > high ? high : _P_x[idx]);
+    _P_y[idx] = _P_y[idx] < low ? low : (_P_y[idx] > high ? high : _P_y[idx]);
+}
 
 #endif

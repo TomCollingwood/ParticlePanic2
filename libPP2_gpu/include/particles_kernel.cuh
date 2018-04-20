@@ -64,5 +64,9 @@ __global__ void addGravityD(unsigned int _N,
                             float * _V_x,
                             float * _V_y);
 
+__global__ void boundaries(unsigned int _N,
+                           float * _P_x,
+                           float * _P_y);
+
 
 #endif
