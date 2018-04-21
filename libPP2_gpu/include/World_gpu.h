@@ -35,11 +35,11 @@ public:
     /// A virtual destructor, in case we want to inherit from this class
     ~WorldGPU();
 
-    void initData();
-
     void simulate();
 
     int getNumPoints();
+
+    void dumpToGeo(const uint cnt);
 
 private: // data
     int m_numPoints = 100;

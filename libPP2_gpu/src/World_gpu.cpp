@@ -8,17 +8,13 @@
 
 WorldGPU::WorldGPU()
 {
+    m_particlesData = initializeParticlesData(m_numPoints,m_gridResolution);
 }
 
 WorldGPU::~WorldGPU()
 {
-}
 
-void WorldGPU::initData()
-{
-    m_particlesData = initializeParticlesData(m_numPoints,m_gridResolution);
 }
-
 
 
 void WorldGPU::simulate()
@@ -59,3 +55,7 @@ void WorldGPU::simulate()
 
 }
 
+void WorldGPU::dumpToGeo(const uint cnt)
+{
+    dumpToGeoCUDA(m_particlesData,cnt);
+}

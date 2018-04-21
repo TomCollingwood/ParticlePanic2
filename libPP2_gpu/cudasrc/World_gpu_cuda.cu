@@ -18,6 +18,9 @@
 #include <thrust/tuple.h>
 #include <thrust/sort.h>
 
+#include <sstream>
+#include <fstream>
+
 #include "World_gpu.cuh"
 #include "particles_kernel.cuh"
 #include "particles_data.cuh"
@@ -109,6 +112,11 @@ ParticlesData * initializeParticlesData(int _numPoints, int _gridRes)
         }
     }
 
+    _data->d_Px = thrust::device_vector<float>(_numPoints,0.0f);
+    _data->d_Py = thrust::device_vector<float>(_numPoints,0.0f);
+    _data->d_prevPx = thrust::device_vector<float>(_numPoints,0.0f);
+    _data->d_prevPy = thrust::device_vector<float>(_numPoints,0.0f);
+
     thrust::copy(h_Px.begin(),h_Px.end(),_data->d_Px.begin());
     thrust::copy(h_Py.begin(),h_Py.end(),_data->d_Py.begin());
     thrust::copy(h_prevPx.begin(),h_prevPx.end(),_data->d_prevPx.begin());
@@ -124,7 +132,7 @@ ParticlesData * initializeParticlesData(int _numPoints, int _gridRes)
     return _data;
 }
 
-void dumpToGeo(ParticlesData *_data,
+void dumpToGeoCUDA(ParticlesData *_data,
                const uint cnt)
 {
     char fname[150];

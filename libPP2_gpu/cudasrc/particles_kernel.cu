@@ -270,7 +270,7 @@ __global__ void boundaries(unsigned int _N,
     if(idx > _N) return;
 
     float low = 0.0f;
-    float high = 1.0f;
+    float high = 0.999f;
     _P_x[idx] = _P_x[idx] < low ? low : (_P_x[idx] > high ? high : _P_x[idx]);
     _P_y[idx] = _P_y[idx] < low ? low : (_P_y[idx] > high ? high : _P_y[idx]);
 }

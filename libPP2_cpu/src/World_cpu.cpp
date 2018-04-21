@@ -75,31 +75,11 @@ WorldCPU::WorldCPU()
 WorldCPU::~WorldCPU()
 {}
 
-void WorldCPU::dumpToObj(const uint cnt)
-{
-    char fname[100];
-    std::sprintf(fname,"geo/CPU.%04d.obj", cnt);
-    std::stringstream ss;
-    std::ofstream file;
-    file.open(fname);
-    if (!file.is_open()) {
-        std::cout << "failed to Open file "<<fname<<'\n';
-        exit(EXIT_FAILURE);
-    }
-    for(int i = 0; i<m_particles.size();++i)
-    {
-        ss << "v "<< m_particles[i].getPosition()[0] << " "
-                  << m_particles[i].getPosition()[1] << " 0\n";
-    }
-    file<<ss.rdbuf();
-    file.close();
-}
-
 void WorldCPU::dumpToGeo(const uint cnt)
 {
     char fname[150];
 
-    std::sprintf(fname,"geo/SPH_GPU.%03d.geo",cnt);
+    std::sprintf(fname,"geo/SPH_CPU.%03d.geo",cnt);
     // we will use a stringstream as it may be more efficient
     std::stringstream ss;
     std::ofstream file;

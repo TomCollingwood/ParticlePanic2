@@ -58,12 +58,9 @@ public:
     //----------------------------------------------------------------------------------------------------------------------
     void hashParticles();
 
-    void dumpToObj(const uint cnt);
-
     void dumpToGeo(const uint cnt);
 
     void pointHash();
-
 
 private:
     /// Keep track of whether this has been initialised - otherwise it won't be ready to draw!

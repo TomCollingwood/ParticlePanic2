@@ -11,32 +11,52 @@
 #include <sys/time.h>
 
 #include "World_cpu.h"
-//#include "World_gpu.h"
+#include "World_gpu.h"
 
-// Our World, which will store all the GL stuff
-WorldCPU *m_worldCPU = NULL;
+
 
 /// This function was originally written by Richard Southern in his Cube workshop
 int main( int argc, char* args[] ) {
 
-    m_worldCPU = new WorldCPU();
+    WorldCPU m_worldCPU;
+    WorldGPU m_worldGPU;
 
     int num_frames = 60;
 
     struct timeval tim;
-            double t1, t2, t3;
-            gettimeofday(&tim, NULL);
+    double t1, t2, t3;
+    gettimeofday(&tim, NULL);
+
+//    for(int i = 1; i<num_frames; ++i)
+//    {
+//        gettimeofday(&tim, NULL);
+//        t1=tim.tv_sec+(tim.tv_usec/1000000.0);
+
+//        m_worldCPU->simulate();
+
+//        gettimeofday(&tim, NULL);
+//        t2=tim.tv_sec+(tim.tv_usec/1000000.0);
+//        t3 = t2-t1;
+
+//        printf("CPU Frame %d took %f seconds\n",i,t3);
+
+//        m_worldCPU->dumpToGeo(i);
+//    }
 
     for(int i = 1; i<num_frames; ++i)
     {
         gettimeofday(&tim, NULL);
         t1=tim.tv_sec+(tim.tv_usec/1000000.0);
-        m_worldCPU->simulate();
+
+        m_worldGPU.simulate();
+
         gettimeofday(&tim, NULL);
         t2=tim.tv_sec+(tim.tv_usec/1000000.0);
         t3 = t2-t1;
-        printf("Frame %d took %f seconds\n",i,t3);
-        m_worldCPU->dumpToGeo(i);
+
+        printf("GPU Frame %d took %f seconds\n",i,t3);
+
+        m_worldGPU.dumpToGeo(i);
     }
 
     return EXIT_SUCCESS;

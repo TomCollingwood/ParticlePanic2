@@ -58,12 +58,9 @@ public:
     //----------------------------------------------------------------------------------------------------------------------
     void hashParticles();
 
-    void dumpToObj(const uint cnt);
-
     void dumpToGeo(const uint cnt);
 
     void pointHash();
-
 
 private:
     /// Keep track of whether this has been initialised - otherwise it won't be ready to draw!
@@ -81,8 +78,8 @@ private:
 
     //---------------------------NEEDED---------------------------------------------
     int m_gridResolution = 4;
-    int m_num_points = 10000;
-    float m_interactionradius = 0.005f;
+    int m_num_points = 100;
+    float m_interactionradius = 0.05f;
     bool m_gravity = true;
     double m_timestep=0.02f;
 

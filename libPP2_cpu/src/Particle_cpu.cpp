@@ -8,9 +8,9 @@ void Particle::updatePosition(float _elapsedtime)
 {
   m_position+=m_velocity*_elapsedtime;
 
-  if(m_position[0]>1.0f)
+  if(m_position[0]>0.999f)
   {
-    m_position[0] = 1.0f;
+    m_position[0] = 0.999f;
     m_velocity[0]= -m_velocity[0]*0.5f;
   }
   else if(m_position[0]<0.0f)
@@ -23,9 +23,9 @@ void Particle::updatePosition(float _elapsedtime)
     m_position[1]=0.0f;
     m_velocity[1]= -m_velocity[1]*0.5f;
   }
-  else if (m_position[1]>1.0f)
+  else if (m_position[1]>0.999f)
   {
-    m_position[1]=1.0f;
+    m_position[1]=0.999f;
     m_velocity[1]= -m_velocity[1]*0.5f;
   }
 }
@@ -60,9 +60,9 @@ void Particle::addPosition(Vec3 _pos)
 {
   m_position+=_pos;
 
-  if(m_position[0]>1.0f)
+  if(m_position[0]>0.999f)
   {
-    m_position[0] = 1.0f;
+    m_position[0] = 0.999f;
     m_velocity[0] = -m_velocity[0]*0.5f;
   }
   else if(m_position[0]<0.0f)
@@ -75,9 +75,9 @@ void Particle::addPosition(Vec3 _pos)
     m_position[1]=0.0f;
     m_velocity[1] = -m_velocity[1]*0.5f;
   }
-  else if (m_position[1]>1.0f)
+  else if (m_position[1]>0.999f)
   {
-    m_position[1]=1.0f;
+    m_position[1]=0.999f;
     m_velocity[1] = -m_velocity[1]*0.5f;
   }
 }
