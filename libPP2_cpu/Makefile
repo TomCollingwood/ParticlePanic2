@@ -51,15 +51,11 @@ OBJECTS_DIR   = obj/
 
 ####### Files
 
-SOURCES       = src/MarchingAlgorithms_cpu.cpp \
-		src/Mat3_cpu.cpp \
-		src/Particle_cpu.cpp \
+SOURCES       = src/Particle_cpu.cpp \
 		src/ParticleProperties_cpu.cpp \
 		src/Vec3_cpu.cpp \
 		src/World_cpu.cpp 
-OBJECTS       = obj/MarchingAlgorithms_cpu.o \
-		obj/Mat3_cpu.o \
-		obj/Particle_cpu.o \
+OBJECTS       = obj/Particle_cpu.o \
 		obj/ParticleProperties_cpu.o \
 		obj/Vec3_cpu.o \
 		obj/World_cpu.o
@@ -243,14 +239,10 @@ DIST          = /opt/Qt5.9.0/5.9/gcc_64/mkspecs/features/spec_pre.prf \
 		/opt/Qt5.9.0/5.9/gcc_64/mkspecs/features/exceptions.prf \
 		/opt/Qt5.9.0/5.9/gcc_64/mkspecs/features/yacc.prf \
 		/opt/Qt5.9.0/5.9/gcc_64/mkspecs/features/lex.prf \
-		libPP2_cpu.pro include/MarchingAlgorithms_cpu.h \
-		include/Mat3_cpu.h \
-		include/Particle_cpu.h \
+		libPP2_cpu.pro include/Particle_cpu.h \
 		include/ParticleProperties_cpu.h \
 		include/Vec3_cpu.h \
-		include/World_cpu.h src/MarchingAlgorithms_cpu.cpp \
-		src/Mat3_cpu.cpp \
-		src/Particle_cpu.cpp \
+		include/World_cpu.h src/Particle_cpu.cpp \
 		src/ParticleProperties_cpu.cpp \
 		src/Vec3_cpu.cpp \
 		src/World_cpu.cpp
@@ -673,8 +665,8 @@ distdir: FORCE
 	@test -d $(DISTDIR) || mkdir -p $(DISTDIR)
 	$(COPY_FILE) --parents $(DIST) $(DISTDIR)/
 	$(COPY_FILE) --parents /opt/Qt5.9.0/5.9/gcc_64/mkspecs/features/data/dummy.cpp $(DISTDIR)/
-	$(COPY_FILE) --parents include/MarchingAlgorithms_cpu.h include/Mat3_cpu.h include/Particle_cpu.h include/ParticleProperties_cpu.h include/Vec3_cpu.h include/World_cpu.h $(DISTDIR)/
-	$(COPY_FILE) --parents src/MarchingAlgorithms_cpu.cpp src/Mat3_cpu.cpp src/Particle_cpu.cpp src/ParticleProperties_cpu.cpp src/Vec3_cpu.cpp src/World_cpu.cpp $(DISTDIR)/
+	$(COPY_FILE) --parents include/Particle_cpu.h include/ParticleProperties_cpu.h include/Vec3_cpu.h include/World_cpu.h $(DISTDIR)/
+	$(COPY_FILE) --parents src/Particle_cpu.cpp src/ParticleProperties_cpu.cpp src/Vec3_cpu.cpp src/World_cpu.cpp $(DISTDIR)/
 
 
 clean: compiler_clean 
@@ -723,31 +715,19 @@ compiler_clean: compiler_moc_predefs_clean
 
 ####### Compile
 
-obj/MarchingAlgorithms_cpu.o: src/MarchingAlgorithms_cpu.cpp include/MarchingAlgorithms_cpu.h \
-		include/Vec3_cpu.h \
-		include/Mat3_cpu.h \
-		include/ParticleProperties_cpu.h
-	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o obj/MarchingAlgorithms_cpu.o src/MarchingAlgorithms_cpu.cpp
-
-obj/Mat3_cpu.o: src/Mat3_cpu.cpp include/Mat3_cpu.h
-	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o obj/Mat3_cpu.o src/Mat3_cpu.cpp
-
 obj/Particle_cpu.o: src/Particle_cpu.cpp include/Particle_cpu.h \
 		include/Vec3_cpu.h \
-		include/Mat3_cpu.h \
 		include/ParticleProperties_cpu.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o obj/Particle_cpu.o src/Particle_cpu.cpp
 
 obj/ParticleProperties_cpu.o: src/ParticleProperties_cpu.cpp include/ParticleProperties_cpu.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o obj/ParticleProperties_cpu.o src/ParticleProperties_cpu.cpp
 
-obj/Vec3_cpu.o: src/Vec3_cpu.cpp include/Vec3_cpu.h \
-		include/Mat3_cpu.h
+obj/Vec3_cpu.o: src/Vec3_cpu.cpp include/Vec3_cpu.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o obj/Vec3_cpu.o src/Vec3_cpu.cpp
 
 obj/World_cpu.o: src/World_cpu.cpp include/World_cpu.h \
 		include/Vec3_cpu.h \
-		include/Mat3_cpu.h \
 		include/Particle_cpu.h \
 		include/ParticleProperties_cpu.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o obj/World_cpu.o src/World_cpu.cpp

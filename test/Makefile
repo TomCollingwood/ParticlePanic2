@@ -671,15 +671,9 @@ compiler_clean: compiler_moc_predefs_clean
 
 obj/Main.o: src/Main.cpp ../include/World_cpu.h \
 		../include/Vec3_cpu.h \
-		../include/Mat3_cpu.h \
 		../include/Particle_cpu.h \
 		../include/ParticleProperties_cpu.h \
-		../include/World_gpu.h \
-		../include/Vec3_gpu.h \
-		../include/Mat3_gpu.h \
-		../include/Particle_gpu.h \
-		../include/ParticleProperties_gpu.h \
-		../include/MarchingAlgorithms_gpu.h
+		../include/World_gpu.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o obj/Main.o src/Main.cpp
 
 ####### Install

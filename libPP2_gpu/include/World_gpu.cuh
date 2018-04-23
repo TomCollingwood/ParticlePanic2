@@ -21,8 +21,16 @@
 //{
     ParticlesData * initializeParticlesData(int _num_points, int _gridRes);
 
+//    void deleteData(ParticlesData * _data);
+
     void dumpToGeoCUDA(ParticlesData *_data,
                    const uint cnt);
+
+    void simulateD(unsigned int _N,
+                   unsigned int _gridRes,
+                   float _iRadius,
+                   float _timestep,
+                   ParticlesData * _data);
 
     void hashOccSort(int _num_points,
                  int _gridRes,

@@ -18,8 +18,6 @@
 #include <cmath>
 #include <cassert>
 
-#include "Mat3_cpu.h"
-
 class Vec3
 {
 public:
@@ -41,7 +39,7 @@ public:
 
   void rotateAroundXAxisf(float degrees);
 
-  Vec3 operator *(Mat3 &_rhs);
+//  Vec3 operator *(Mat3 &_rhs);
   Vec3 operator *(GLfloat _rhs) const;
   void operator *=(GLfloat _rhs);
   Vec3 operator /(GLfloat _rhs) const;

@@ -16,11 +16,6 @@
 #include <string>
 #include <vector>
 
-#include "Vec3_gpu.h"
-#include "Particle_gpu.h"
-#include "ParticleProperties_gpu.h"
-#include "MarchingAlgorithms_gpu.h"
-
 class ParticlesData;
 
 /**
@@ -31,11 +26,12 @@ class WorldGPU
 public:
     /// A constructor, called when this class is instanced in the form of an object
     WorldGPU();
+    WorldGPU(uint _num_points, float _iRadius, float _timestep, uint _gridRes);
 
     /// A virtual destructor, in case we want to inherit from this class
     ~WorldGPU();
 
-    void simulate();
+    void simulate(int _substeps);
 
     int getNumPoints();
 

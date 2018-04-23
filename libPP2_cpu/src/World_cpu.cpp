@@ -1,10 +1,27 @@
 ///
 ///  @file World.cpp
-///  @brief contains all particles and methods to draw and update them
+///  @brief contains all particles and methods to update them and export
 
 #include "include/World_cpu.h"
 
 WorldCPU::WorldCPU()
+{
+    initData();
+}
+
+WorldCPU::WorldCPU(int _num_points, float _iRadius, float _timestep, int _gridRes)
+{
+    m_num_points=_num_points;
+    m_interactionradius=_iRadius;
+    m_timestep=_timestep;
+    m_gridResolution=_gridRes;
+    initData();
+}
+
+WorldCPU::~WorldCPU()
+{}
+
+void WorldCPU::initData()
 {
     m_particles.clear();
     m_gravity = true;
@@ -18,7 +35,7 @@ WorldCPU::WorldCPU()
     srand(42);
     if(m_num_points<=100)
     {
-    //------------------DAMBREAKER 100----------------------
+        //------------------DAMBREAKER 100----------------------
         for(int x = 0; x<5; ++x)
         {
             for(int y =0; y<20; ++y)
@@ -36,7 +53,7 @@ WorldCPU::WorldCPU()
     }
     else if(m_num_points<=10000)
     {
-    //------------------DAMBREAKER 10,000----------------------
+        //------------------DAMBREAKER 10,000----------------------
         for(int x = 0; x<50; ++x)
         {
             for(int y =0; y<200; ++y)
@@ -47,14 +64,14 @@ WorldCPU::WorldCPU()
                 xr = 0.5f-xr;
                 yr = 0.5f-yr;
                 m_particles[x+y*50].setPosition(Vec3(float(x)*(1.0f/200.0f)+xr*0.001f,
-                                                    float(y)*(1.0f/200.0f)+yr*0.001f,
-                                                    0.0f));
+                                                     float(y)*(1.0f/200.0f)+yr*0.001f,
+                                                     0.0f));
             }
         }
     }
     else if(m_num_points<=1000000)
     {
-    //------------------DAMBREAKER 1,000,000----------------------
+        //------------------DAMBREAKER 1,000,000----------------------
         for(int x = 0; x<500; ++x)
         {
             for(int y =0; y<2000; ++y)
@@ -65,15 +82,12 @@ WorldCPU::WorldCPU()
                 xr = 0.5f-xr;
                 yr = 0.5f-yr;
                 m_particles[x+y*500].setPosition(Vec3(float(x)*(1.0f/2000.0f)+xr*0.0001f,
-                                                    float(y)*(1.0f/2000.0f)+yr*0.0001f,
-                                                    0.0f));
+                                                      float(y)*(1.0f/2000.0f)+yr*0.0001f,
+                                                      0.0f));
             }
         }
     }
 }
-
-WorldCPU::~WorldCPU()
-{}
 
 void WorldCPU::dumpToGeo(const uint cnt)
 {
@@ -128,153 +142,142 @@ void WorldCPU::dumpToGeo(const uint cnt)
 
 //-----------------------------------------------UPDATE-----------------------------------------
 
-void WorldCPU::simulate() {
-
-  static int ourFrame = 0;
-  ourFrame++;
-  // Some stuff we need to perform timings
-  struct timeval tim;
-
-  // ------------------------------GRAVITY --------------------------------------------
-  if(m_gravity)
-  {
-    Vec3 gravityvel = Vec3(0.0f,-0.008,0.0f);
-
-    // The line below rotates the gravity when in 3D according to how far you tip the box.
-    // gravityvel.rotateAroundXAxisf(-m_camerarotatey*(M_PI/180.0f));
-
-    for(int i=0; i<m_num_points; ++i)
+void WorldCPU::simulate(int _substeps)
+{
+    for(int i =0; i<_substeps; ++i)
     {
-      m_particles[i].addVelocity(gravityvel);
-    }
-  }
-
-  // ------------------------------VISCOSITY--------------------------------------------
-  int choo = 0;
-
-  //#pragma omp parallel for ordered schedule(dynamic)
-  for(auto k = 0; k<(int)m_grid.size(); ++k)
-  {
-    int ploo = 0;
-    for(auto& i : m_grid[k])
-    {
-      if(!(i->getWall()))
-      {
-        std::vector<Particle *> surroundingParticles = getSurroundingParticles(choo,1,false);
-        int cloo = 0;
-        for(auto& j : surroundingParticles)
+        // ------------------------------GRAVITY --------------------------------------------
+        if(m_gravity)
         {
-          if(cloo>ploo && !(j->getWall()))
-          {
-            Vec3 rij=(j->getPosition()-i->getPosition());
-            float q = rij.length()/m_interactionradius;
-            if(q<1 && q!=0)
+            Vec3 gravityvel = Vec3(0.0f,-0.008,0.0f);
+
+            for(int i=0; i<m_num_points; ++i)
             {
-              rij.normalize();
-              float u = (i->getVelocity()-j->getVelocity()).dot(rij);
-              if(u>0)
-              {
-                ParticleProperties *thisproperties = i->getProperties();
-                float sig = thisproperties->getSigma();
-                float bet = thisproperties->getBeta();
-                Vec3 impulse = rij*((1-q)*(sig*u + bet*u*u))*m_timestep;
-                i->addVelocity(-impulse/2.0f);
-                j->addVelocity(impulse/2.0f);
-              }
+                m_particles[i].addVelocity(gravityvel);
             }
-
-          }
-          cloo++;
         }
-        ploo++;
 
-      }
-    }
-    choo++;
-  }
-  // */
+        // ------------------------------VISCOSITY--------------------------------------------
+        int choo = 0;
 
-  //------------------------------------------POSITION----------------------------------------
-
-  for(int i=0; i<m_num_points; ++i)
-  {
-      m_particles[i].updatePrevPosition();
-      m_particles[i].updatePosition(m_timestep);
-  }
-
-  //-----------------------------------------HASH------------------------------
-
-  hashParticles();
-
-
-  //----------------------------------DOUBLEDENSITY------------------------------------------
-  int count =0;
-
-  for(int k = 0; k<(int)m_grid.size(); ++k)
-  {
-    std::vector<Particle *> neighbours=getSurroundingParticles(count,1,false);
-
-    for(auto& i : m_grid[k])
-    {
-      float density =0;
-      float neardensity=0;
-      for(auto& j : neighbours)
-      {
-        Vec3 rij = j->getPosition()-i->getPosition();
-        float rijmag = rij.length();
-        float q = rijmag/m_interactionradius;
-        if(q<1 && q!=0) // q==0 when same particle
+        for(auto k = 0; k<(int)m_grid.size(); ++k)
         {
-          density+=(1.0f-q)*(1.0f-q);
-          neardensity+=(1.0f-q)*(1.0f-q)*(1.0f-q);
+            int ploo = 0;
+            for(auto& i : m_grid[k])
+            {
+                if(!(i->getWall()))
+                {
+                    std::vector<Particle *> surroundingParticles = getSurroundingParticles(choo,1,false);
+                    int cloo = 0;
+                    for(auto& j : surroundingParticles)
+                    {
+                        if(cloo>ploo && !(j->getWall()))
+                        {
+                            Vec3 rij=(j->getPosition()-i->getPosition());
+                            float q = rij.length()/m_interactionradius;
+                            if(q<1 && q!=0)
+                            {
+                                rij.normalize();
+                                float u = (i->getVelocity()-j->getVelocity()).dot(rij);
+                                if(u>0)
+                                {
+                                    ParticleProperties *thisproperties = i->getProperties();
+                                    float sig = thisproperties->getSigma();
+                                    float bet = thisproperties->getBeta();
+                                    Vec3 impulse = rij*((1-q)*(sig*u + bet*u*u))*m_timestep;
+                                    i->addVelocity(-impulse/2.0f);
+                                    j->addVelocity(impulse/2.0f);
+                                }
+                            }
+                        }
+                        cloo++;
+                    }
+                    ploo++;
+                }
+            }
+            choo++;
         }
-      }
 
-      float p0 = i->getProperties()->getP0();
-      float k = i->getProperties()->getK();
-      float knear = i->getProperties()->getKnear();
+        //------------------------------------------POSITION----------------------------------------
 
-      float P = k*(density -p0);
-      float Pnear = knear * neardensity;
-      Vec3 dx = Vec3();
-      for(auto& j : neighbours)
-      {
-        Vec3 rij = j->getPosition()-i->getPosition();
-        float rijmag = rij.length();
-        float q = rijmag/m_interactionradius;
-        if(q<1 && q!=0)
+        for(int i=0; i<m_num_points; ++i)
         {
-          rij.normalize();
-          Vec3 D = rij*(m_timestep*m_timestep*(P*(1.0f-q))+Pnear*(1.0f-q)*(1.0f-q));
-          j->addPosition(D/2);
-          dx-=(D/2);
-//          printf("HERE:Dx: %f, Dy: %f\n",D[0],D[1]);
+            m_particles[i].updatePrevPosition();
+            m_particles[i].updatePosition(m_timestep);
         }
-      }
-//      printf("HERE2:dx: %f, dy: %f\n",dx[0],dx[1]);
-      i->addPosition(dx);
-    }
-    count++;
-  }
-  //----------------------------------MAKE NEW VELOCITY-------------------------------------
 
-  for(auto& list : m_grid)
-  {
-    for(auto& i : list)
-    {
-      i->setVelocity((i->getPosition()-i->getPrevPosition())/m_timestep);
-    }
-  }
+        //-----------------------------------------HASH------------------------------
 
+        hashParticles();
+
+        //----------------------------------DOUBLEDENSITY------------------------------------------
+        int count =0;
+
+        for(int k = 0; k<(int)m_grid.size(); ++k)
+        {
+            std::vector<Particle *> neighbours=getSurroundingParticles(count,1,false);
+
+            for(auto& i : m_grid[k])
+            {
+                float density =0;
+                float neardensity=0;
+                for(auto& j : neighbours)
+                {
+                    Vec3 rij = j->getPosition()-i->getPosition();
+                    float rijmag = rij.length();
+                    float q = rijmag/m_interactionradius;
+                    if(q<1 && q!=0) // q==0 when same particle
+                    {
+                        density+=(1.0f-q)*(1.0f-q);
+                        neardensity+=(1.0f-q)*(1.0f-q)*(1.0f-q);
+                    }
+                }
+
+                float p0 = i->getProperties()->getP0();
+                float k = i->getProperties()->getK();
+                float knear = i->getProperties()->getKnear();
+
+                float P = k*(density -p0);
+                float Pnear = knear * neardensity;
+                Vec3 dx = Vec3();
+                for(auto& j : neighbours)
+                {
+                    Vec3 rij = j->getPosition()-i->getPosition();
+                    float rijmag = rij.length();
+                    float q = rijmag/m_interactionradius;
+                    if(q<1 && q!=0)
+                    {
+                        rij.normalize();
+                        Vec3 D = rij*(m_timestep*m_timestep*(P*(1.0f-q))+Pnear*(1.0f-q)*(1.0f-q));
+                        j->addPosition(D/2);
+                        dx-=(D/2);
+                    }
+                }
+                i->addPosition(dx);
+            }
+            count++;
+        }
+        //----------------------------------MAKE NEW VELOCITY-------------------------------------
+
+        for(auto& list : m_grid)
+        {
+            for(auto& i : list)
+            {
+                i->setVelocity((i->getPosition()-i->getPrevPosition())/m_timestep);
+            }
+        }
+    }
 }
 
 //---------------------------------HASH FUNCTIONS--------------------------------------------------------
 
-void WorldCPU::pointHash()
+void WorldCPU::hashParticles()
 {
+    int gridSize = m_gridResolution*m_gridResolution;
     std::vector<Particle *> newvector;
-    m_grid.assign(m_gridResolution*m_gridResolution,newvector);
-    for(int i = 0; i<m_num_points; ++i)
+    m_grid.assign(gridSize,newvector);
+    int grid_cell;
+    for(int i=0; i<m_num_points; ++i)
     {
         float positionx = m_particles[i].getPosition()[0];
         float positiony = m_particles[i].getPosition()[1];
@@ -284,57 +287,35 @@ void WorldCPU::pointHash()
         if(positiony<0.0f) positiony=0.0f;
         else if (positiony>1.0f) positiony=1.0f;
 
-        int grid_cell=floor(positionx*m_gridResolution)*m_gridResolution + floor(positiony*m_gridResolution);
-        m_grid[grid_cell].push_back(&m_particles[i]);
+        grid_cell=floor(positionx*m_gridResolution)*m_gridResolution + floor(positiony*m_gridResolution);
+
+        if(grid_cell>=0 && grid_cell<gridSize)
+        {
+            m_grid[grid_cell].push_back(&m_particles[i]);
+        }
 
     }
-}
-
-void WorldCPU::hashParticles()
-{
-  int gridSize = m_gridResolution*m_gridResolution;
-  std::vector<Particle *> newvector;
-  m_grid.assign(gridSize,newvector);
-  int grid_cell;
-  for(int i=0; i<m_num_points; ++i)
-  {
-      float positionx = m_particles[i].getPosition()[0];
-      float positiony = m_particles[i].getPosition()[1];
-
-      if(positionx<0.0f) positionx=0.0f;
-      else if (positionx>1.0f) positionx=1.0f;
-      if(positiony<0.0f) positiony=0.0f;
-      else if (positiony>1.0f) positiony=1.0f;
-
-      grid_cell=floor(positionx*m_gridResolution)*m_gridResolution + floor(positiony*m_gridResolution);
-
-      if(grid_cell>=0 && grid_cell<gridSize)
-      {
-        m_grid[grid_cell].push_back(&m_particles[i]);
-      }
-
-  }
 }
 
 std::vector<Particle *> WorldCPU::getSurroundingParticles(int thiscell, int numsur, bool dragselect) const
 {
-  int numSurrounding=1;
-  std::vector<Particle *> surroundingParticles;
+    int numSurrounding=1;
+    std::vector<Particle *> surroundingParticles;
 
     for(int i = -numSurrounding; i <= numSurrounding; ++i)
     {
-      for(int j = -numSurrounding; j <= numSurrounding; ++j)
-      {
-        int grid_cell = thiscell+ i*m_gridResolution + j;
-        if(grid_cell<(m_gridResolution*m_gridResolution) && grid_cell>=0)
+        for(int j = -numSurrounding; j <= numSurrounding; ++j)
         {
-          for(auto& p : m_grid[grid_cell])
-          {
-            surroundingParticles.push_back(p);
-          }
+            int grid_cell = thiscell+ i*m_gridResolution + j;
+            if(grid_cell<(m_gridResolution*m_gridResolution) && grid_cell>=0)
+            {
+                for(auto& p : m_grid[grid_cell])
+                {
+                    surroundingParticles.push_back(p);
+                }
+            }
         }
-      }
     }
 
-  return surroundingParticles;
+    return surroundingParticles;
 }
