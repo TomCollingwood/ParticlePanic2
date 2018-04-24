@@ -372,7 +372,7 @@ int main(int argc, char **argv) {
     int m_num_points = 10000;
     int m_num_frames = 240;
     float m_interactionRadius = 0.005f;
-    float m_timestep = 0.02f;
+    float m_timestep = 0.002f;
     int m_grid_resolution = 4;
     if(argc>1) m_num_points=atoi(argv[1]);
     if(argc>2) m_num_frames=atoi(argv[2]);

@@ -1,0 +1,18 @@
+/SparseLU.h/1.1/Tue Sep  3 12:14:25 2013//
+/SparseLUImpl.h/1.1/Tue Sep  3 12:14:25 2013//
+/SparseLU_Memory.h/1.1/Tue Sep  3 12:14:25 2013//
+/SparseLU_Structs.h/1.1/Tue Sep  3 12:14:25 2013//
+/SparseLU_SupernodalMatrix.h/1.1/Tue Sep  3 12:14:25 2013//
+/SparseLU_Utils.h/1.1/Tue Sep  3 12:14:25 2013//
+/SparseLU_column_bmod.h/1.1/Tue Sep  3 12:14:25 2013//
+/SparseLU_column_dfs.h/1.1/Tue Sep  3 12:14:25 2013//
+/SparseLU_copy_to_ucol.h/1.1/Tue Sep  3 12:14:26 2013//
+/SparseLU_gemm_kernel.h/1.1/Tue Sep  3 12:14:26 2013//
+/SparseLU_heap_relax_snode.h/1.1/Tue Sep  3 12:14:26 2013//
+/SparseLU_kernel_bmod.h/1.1/Tue Sep  3 12:14:26 2013//
+/SparseLU_panel_bmod.h/1.1/Tue Sep  3 12:14:26 2013//
+/SparseLU_panel_dfs.h/1.1/Tue Sep  3 12:14:26 2013//
+/SparseLU_pivotL.h/1.1/Tue Sep  3 12:14:26 2013//
+/SparseLU_pruneL.h/1.1/Tue Sep  3 12:14:26 2013//
+/SparseLU_relax_snode.h/1.1/Tue Sep  3 12:14:26 2013//
+D

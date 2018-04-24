@@ -1,0 +1,26 @@
+/AmbiVector.h/1.1/Tue Sep  3 12:14:21 2013//
+/CompressedStorage.h/1.1/Tue Sep  3 12:14:21 2013//
+/ConservativeSparseSparseProduct.h/1.1/Tue Sep  3 12:14:21 2013//
+/MappedSparseMatrix.h/1.1/Tue Sep  3 12:14:21 2013//
+/SparseBlock.h/1.1/Tue Sep  3 12:14:21 2013//
+/SparseColEtree.h/1.1/Tue Sep  3 12:14:21 2013//
+/SparseCwiseBinaryOp.h/1.1/Tue Sep  3 12:14:21 2013//
+/SparseCwiseUnaryOp.h/1.1/Tue Sep  3 12:14:21 2013//
+/SparseDenseProduct.h/1.1/Tue Sep  3 12:14:21 2013//
+/SparseDiagonalProduct.h/1.1/Tue Sep  3 12:14:21 2013//
+/SparseDot.h/1.1/Tue Sep  3 12:14:22 2013//
+/SparseFuzzy.h/1.1/Tue Sep  3 12:14:22 2013//
+/SparseMatrix.h/1.1/Tue Sep  3 12:14:22 2013//
+/SparseMatrixBase.h/1.1/Tue Sep  3 12:14:22 2013//
+/SparsePermutation.h/1.1/Tue Sep  3 12:14:22 2013//
+/SparseProduct.h/1.1/Tue Sep  3 12:14:22 2013//
+/SparseRedux.h/1.1/Tue Sep  3 12:14:22 2013//
+/SparseSelfAdjointView.h/1.1/Tue Sep  3 12:14:23 2013//
+/SparseSparseProductWithPruning.h/1.1/Tue Sep  3 12:14:23 2013//
+/SparseTranspose.h/1.1/Tue Sep  3 12:14:23 2013//
+/SparseTriangularView.h/1.1/Tue Sep  3 12:14:23 2013//
+/SparseUtil.h/1.1/Tue Sep  3 12:14:23 2013//
+/SparseVector.h/1.1/Tue Sep  3 12:14:23 2013//
+/SparseView.h/1.1/Tue Sep  3 12:14:23 2013//
+/TriangularSolver.h/1.1/Tue Sep  3 12:14:24 2013//
+D

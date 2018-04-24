@@ -40,8 +40,32 @@ To build type "make" into terminal when in PP2GPUMain directory. Then you run th
 
 ## Comparison of times
 
+The times below were recorded on a Intel® Xeon(R) CPU E5-1650 v3 @ 3.50GHz × 12 processor, a Quadro K2200 graphics card and 32GB of RAM.
+
 Number of Particles | CPU library Time per Frame (seconds) | GPU library Time per Frame (seconds) | GPU App time per frame (seconds)
 ------------------- | ------------------------------------ | ------------------------------------ | --------------------------------
-100 		| ~0.0022 	|		|
-10,000 		| ~13.0 	| ~0.145 	|
-100,000 	| ~1001.97	| 		|
+100 		| ~0.0022 	| ~0.014	| ~0.0012
+10,000 		| ~13.0 	| ~0.145 	| ~0.055
+100,000 	| ~1001.97	| ~16.23	| ~7.05
+
+## Benchmark
+
+Benchmark | Time | CPU Iterations
+--------- | ---- | --------------
+CPU_worldCreation            |      19154 ns |      19155 ns |     29709
+GPU_worldCreation            |    2845229 ns |    2845284 ns |       232
+CPU_worldTenThousandCreation |    2019773 ns |    2019932 ns |       342
+GPU_worldTenThousandCreation |    7833039 ns |    7833436 ns |        88
+CPU_worldMillionCreation     |  209919534 ns |  209941143 ns |         3
+GPU_worldMillionCreation     |  309583895 ns |  309556235 ns |         2
+CPU_simulateHundred          |    1467880 ns |    1467941 ns |       404
+GPU_simulateHundred          |   14201930 ns |   14201589 ns |        46
+CPU_simulateTenThosand       | 7586408742 ns | 7586935837 ns |         1
+GPU_simulateTenThosand       |  338824467 ns |  338829504 ns |         4
+
+## Issues
+
+Sometimes there is an illegal memory access error that is asserted. This can be fixed by restarting your computer and running it again immediately.
+
+
+

@@ -11,8 +11,11 @@
 
 int main( int argc, char* args[] ) {
 
-    WorldCPU m_worldCPU(10000,0.005f,0.002f,4);
-    WorldGPU m_worldGPU(100000,0.0005f,0.002f,4);
+    WorldCPU m_worldCPU(100,0.05f,0.02f,4);
+    WorldGPU m_worldGPU(100,0.05f,0.02f,4);
+
+//    WorldCPU m_worldCPU(10000,0.005f,0.002f,4);
+//    WorldGPU m_worldGPU(100000,0.0005f,0.002f,4);
 
     int num_frames = 5;
 
@@ -30,7 +33,6 @@ int main( int argc, char* args[] ) {
         t2=tim.tv_sec+(tim.tv_usec/1000000.0);
         t3 = t2-t1;
 
-//      printf("CPU Frame %d took %f seconds\n",i,t3);
         std::cout<<"CPU Frame "<<i<<" took "<<t3<<" seconds"<<std::endl;
 
 
@@ -48,7 +50,6 @@ int main( int argc, char* args[] ) {
 //        t2=tim.tv_sec+(tim.tv_usec/1000000.0);
 //        t3 = t2-t1;
 
-//        //printf("GPU Frame %d took %f seconds\n",i,t3);
 //        std::cout<<"GPU Frame "<<i<<" took "<<t3<<" seconds"<<std::endl;
 
 //        m_worldGPU.dumpToGeo(i);
