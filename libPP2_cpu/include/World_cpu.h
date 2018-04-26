@@ -1,5 +1,5 @@
 /// \file World.h
-/// \brief contains all particles and methods to draw and update them
+/// \brief contains all particles and methods to update them
 /// \author Thomas Collingwood
 /// \version 2.0
 /// \date 23/4/18 Updated to NCCA Coding standard
@@ -25,7 +25,7 @@
 
 
 /**
- * @brief The Wo class
+ * @brief The World class
  */
 class WorldCPU
 {
@@ -67,9 +67,9 @@ public:
 
     //----------------------------------------------------------------------------------------------------------------------
     /// \brief dumpToGeo    Creates Houdini Geo file with the simulated particles
-    /// \param cnt[in]      What frame to save the filename as
+    /// \param[in] _cnt     What frame to save the filename as
     //----------------------------------------------------------------------------------------------------------------------
-    void dumpToGeo(const uint cnt);
+    void dumpToGeo(const uint _cnt);
 
 private:
     //----------------------------------------------------------------------------------------------------------------------

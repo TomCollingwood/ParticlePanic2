@@ -50,8 +50,8 @@ Number of Particles | CPU library Time per Frame (seconds) | GPU library Time pe
 
 ## Benchmark
 
-Benchmark | Time | CPU Iterations
---------- | ---- | --------------
+Benchmark | Time | CPU | Iterations
+--------- | ---- | --- | ----------
 CPU_worldCreation            |      19154 ns |      19155 ns |     29709
 GPU_worldCreation            |    2845229 ns |    2845284 ns |       232
 CPU_worldTenThousandCreation |    2019773 ns |    2019932 ns |       342

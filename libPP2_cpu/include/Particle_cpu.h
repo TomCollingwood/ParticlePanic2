@@ -43,12 +43,6 @@ public:
     {}
 
   //----------------------------------------------------------------------------------------------------------------------
-  /// \brief drawParticle   draws the particle with gluSphere
-  /// \param[in] _pointsize size of sphere
-  //----------------------------------------------------------------------------------------------------------------------
-  void drawParticle(const float _pointsize);
-
-  //----------------------------------------------------------------------------------------------------------------------
   /// \brief setPosition  sets the Vec3 position of the particle
   /// \param[in] pos      position to be set to
   //----------------------------------------------------------------------------------------------------------------------
@@ -224,13 +218,6 @@ private:
   bool m_dragged;
   bool m_alive;
   int m_index;
-
-  //std::vector<Spring *> particleSprings;
-
-//  GLfloat rotation;
-//  Colour particleColour;
-//  int timeToDeath;
-//  ParticleProperties* system;
 };
 
 #endif

@@ -1,12 +1,6 @@
 #ifndef _PARTICLES_KERNEL_CUH_
 #define _PARTICLES_KERNEL_CUH_
 
-
-//__device__ float clamp(const float& value, const float& low, const float& high)
-//{
-//  return value < low ? low : (value > high ? high : value);
-//}
-
 __global__ void pointHash2D(unsigned int *hash,
                             float *Px,
                             float *Py,

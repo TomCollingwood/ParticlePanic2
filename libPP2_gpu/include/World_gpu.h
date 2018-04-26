@@ -24,18 +24,36 @@ class ParticlesData;
 class WorldGPU
 {
 public:
-    /// A constructor, called when this class is instanced in the form of an object
     WorldGPU();
+
+    //----------------------------------------------------------------------------------------------------------------------
+    /// \brief WorldGPU         Parameterized constructor
+    /// \param[in] _num_points  Number of particles
+    /// \param[in] _iRadius     Interaction radius of particles
+    /// \param[in] _timestep    Timestep of simulation
+    /// \param[in] _gridRes     Resolution of spatial hash
+    //----------------------------------------------------------------------------------------------------------------------
     WorldGPU(uint _num_points, float _iRadius, float _timestep, uint _gridRes);
 
-    /// A virtual destructor, in case we want to inherit from this class
     ~WorldGPU();
 
+    //----------------------------------------------------------------------------------------------------------------------
+    /// \brief simulate         Simulate the particles for a frame
+    /// \param[in] _substeps    Number of substeps to simulate (each substep lasts a timestep)
+    //----------------------------------------------------------------------------------------------------------------------
     void simulate(int _substeps);
 
+    //----------------------------------------------------------------------------------------------------------------------
+    /// \brief getNumPoints Returns number of particles in system
+    /// \return             Number of particles
+    //----------------------------------------------------------------------------------------------------------------------
     int getNumPoints();
 
-    void dumpToGeo(const uint cnt);
+    //----------------------------------------------------------------------------------------------------------------------
+    /// \brief dumpToGeo    Exports particles positions to Houdini geo file
+    /// \param[in] _cnt     Frame number
+    //----------------------------------------------------------------------------------------------------------------------
+    void dumpToGeo(const uint _cnt);
 
 private: // data
     int m_numPoints = 100;

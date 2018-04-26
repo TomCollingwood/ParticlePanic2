@@ -17,59 +17,107 @@
 
 #include "particles_data.cuh"
 
-//extern "C"
-//{
-    ParticlesData * initializeParticlesData(int _num_points, int _gridRes);
+//----------------------------------------------------------------------------------------------------------------------
+/// \brief initializeParticlesData  Initializes particles in dambreaker formation
+/// \param[in] _num_points          Number of particles to initialize
+/// \param[in] _gridRes             The resolution of the spatial hash
+/// \return                         The ParticlesData object containing the particle data
+//----------------------------------------------------------------------------------------------------------------------
+ParticlesData * initializeParticlesData(const int _num_points, const int _gridRes);
 
-//    void deleteData(ParticlesData * _data);
+//----------------------------------------------------------------------------------------------------------------------
+/// \brief deleteData       Delete memory where the particle data is stored
+/// \param[in,out] io_data  The data to delete
+//----------------------------------------------------------------------------------------------------------------------
+void deleteData(ParticlesData * io_data);
 
-    void dumpToGeoCUDA(ParticlesData *_data,
-                   const uint cnt);
+//----------------------------------------------------------------------------------------------------------------------
+/// \brief dumpToGeoCUDA    Exports particle positions to Houdini Geo file
+/// \param[in] _data        The ParticlesData object to export
+/// \param[in] _cnt         The frame number
+//----------------------------------------------------------------------------------------------------------------------
+void dumpToGeoCUDA(ParticlesData *_data,
+               const uint _cnt);
 
-    void simulateD(unsigned int _N,
-                   unsigned int _gridRes,
-                   float _iRadius,
-                   float _timestep,
-                   ParticlesData * _data);
+//----------------------------------------------------------------------------------------------------------------------
+/// \brief simulateD        Runs all CUDA simulation steps in this function
+/// \param[in] _N           Number of particles
+/// \param[in] _gridRes     Resolution of spatial hash
+/// \param[in] _iRadius     Interaction radius of particles
+/// \param[in] _timestep    Timestep
+/// \param[in,out] io_data  The particle data to use for simulation
+//----------------------------------------------------------------------------------------------------------------------
+void simulateD(unsigned int _N,
+               unsigned int _gridRes,
+               float _iRadius,
+               float _timestep,
+               ParticlesData * io_data);
 
-    void hashOccSort(int _num_points,
-                 int _gridRes,
-                 ParticlesData * _data);
+//----------------------------------------------------------------------------------------------------------------------
+/// \brief hashOccSort      Finds hash for each particle, sorts according to hash, counts cell occupancy
+///                         and then performs exclusive scan on cell occupancy to get cell indexes (d_scatterAdd)
+/// \param[in] _num_points  Number of particles
+/// \param[in] _gridRes     Resolution of the spatial hash
+/// \param[in,out] io_data  The particle data to use
+//----------------------------------------------------------------------------------------------------------------------
+void hashOccSort(int _num_points,
+             int _gridRes,
+             ParticlesData * io_data);
 
-    void pointHash(int _num_points,
-                   int _gridRes,
-                   ParticlesData * _data);
+//----------------------------------------------------------------------------------------------------------------------
+/// \brief viscosity        Calculates viscosity velocity additions to particles
+/// \param[in] _N           Number of particles
+/// \param[in] _gridRes     Resolution of spatial hash
+/// \param[in] _iRadius     Interaction radius of particles
+/// \param[in] _timestep    Timestep used in simulation
+/// \param[in,out] io_data  The particle data to use for simulation
+//----------------------------------------------------------------------------------------------------------------------
+void viscosity(unsigned int _N,
+               unsigned int _gridRes,
+               float _iRadius,
+               float _timestep,
+               ParticlesData * io_data);
 
-    void sortHash(ParticlesData * _data);
+//----------------------------------------------------------------------------------------------------------------------
+/// \brief integrate        Integrates the position with velocity
+/// \param[in] _N           Number of particles
+/// \param[in] _timestep    Timestep used in simulation
+/// \param[in,out] io_data  The particle data to use for simulation
+//----------------------------------------------------------------------------------------------------------------------
+void integrate(unsigned int _N,
+               float _timestep,
+               ParticlesData * io_data);
 
-    void countCellOcc(int _num_points,
-                   int _gridRes,
-                   ParticlesData * _data);
+//----------------------------------------------------------------------------------------------------------------------
+/// \brief density          Calculates density for each particle and moves particle and surrounding particles accordingly.
+/// \param[in] _N           Number of particles
+/// \param[in] _gridRes     Resolution of spatial hash
+/// \param[in] _iRadius     Interaction radius of the particles
+/// \param[in] _timestep    Timestep
+/// \param[in,out] io_data  The particle data to use for simulation
+//----------------------------------------------------------------------------------------------------------------------
+void density(unsigned int _N,
+              unsigned int _gridRes,
+              float _iRadius,
+              float _timestep,
+              ParticlesData * io_data);
 
-    void exclusiveScan(ParticlesData * _data);
+//----------------------------------------------------------------------------------------------------------------------
+/// \brief updateVelocity   Updates velocity based on previous and current position
+/// \param[in] _N           Number of particles
+/// \param[in] _timestep    Timestep used in simulation
+/// \param[in,out] io_data  The particle data to use for simulation
+//----------------------------------------------------------------------------------------------------------------------
+void updateVelocity(unsigned int _N,
+                    float _timestep,
+                    ParticlesData * io_data);
 
-    void viscosity(unsigned int _N,
-                   unsigned int _gridRes,
-                   float _iRadius,
-                   float _timestep,
-                   ParticlesData * _data);
-
-    void integrate(unsigned int _N,
-                   float _timestep,
-                   ParticlesData * _data);
-
-    void density(unsigned int _N,
-                  unsigned int _gridRes,
-                  float _iRadius,
-                  float _timestep,
-                  ParticlesData * _data);
-
-    void updateVelocity(unsigned int _N,
-                        float _timestep,
-                        ParticlesData * _data);
-
-    void addGravity(unsigned int _N,
-                    ParticlesData * _data);
-//}
+//----------------------------------------------------------------------------------------------------------------------
+/// \brief addGravity       Adds gravity acceleration to the velocity
+/// \param[in] _N           Number of particles
+/// \param[in,out] io_data  The particle data to use for simulation
+//----------------------------------------------------------------------------------------------------------------------
+void addGravity(unsigned int _N,
+                ParticlesData * io_data);
 
 #endif

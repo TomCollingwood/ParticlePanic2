@@ -89,11 +89,11 @@ void WorldCPU::initData()
     }
 }
 
-void WorldCPU::dumpToGeo(const uint cnt)
+void WorldCPU::dumpToGeo(const uint _cnt)
 {
     char fname[150];
 
-    std::sprintf(fname,"geo/SPH_CPU.%03d.geo",cnt);
+    std::sprintf(fname,"geo/SPH_CPU.%03d.geo",_cnt);
     // we will use a stringstream as it may be more efficient
     std::stringstream ss;
     std::ofstream file;

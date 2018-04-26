@@ -22,6 +22,7 @@ WorldGPU::WorldGPU(uint _num_points, float _iRadius, float _timestep, uint _grid
 
 WorldGPU::~WorldGPU()
 {
+    deleteData(m_particlesData);
 }
 
 void WorldGPU::simulate(int _substeps)
@@ -66,7 +67,7 @@ void WorldGPU::simulate(int _substeps)
     }
 }
 
-void WorldGPU::dumpToGeo(const uint cnt)
+void WorldGPU::dumpToGeo(const uint _cnt)
 {
-    dumpToGeoCUDA(m_particlesData,cnt);
+    dumpToGeoCUDA(m_particlesData,_cnt);
 }

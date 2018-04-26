@@ -35,13 +35,13 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
     }
 }
 
-ParticlesData * initializeParticlesData(int _numPoints, int _gridRes)
+ParticlesData * initializeParticlesData(const int _numPoints, const int _gridRes)
 {
     ParticlesData * _data = new ParticlesData();
 
     int nCells = _gridRes*_gridRes;
 
-    gpuErrchk( cudaPeekAtLastError() );
+    //gpuErrchk( cudaPeekAtLastError() );
 
     thrust::host_vector<float> h_Px(_numPoints);
     thrust::host_vector<float> h_Py(_numPoints);
@@ -129,12 +129,17 @@ ParticlesData * initializeParticlesData(int _numPoints, int _gridRes)
     return _data;
 }
 
+void deleteData(ParticlesData * io_data)
+{
+    delete io_data;
+}
+
 void dumpToGeoCUDA(ParticlesData *_data,
-                   const uint cnt)
+                   const uint _cnt)
 {
     char fname[150];
 
-    std::sprintf(fname,"geo/SPH_GPU.%03d.geo",cnt);
+    std::sprintf(fname,"geo/SPH_GPU.%03d.geo",_cnt);
     // we will use a stringstream as it may be more efficient
     std::stringstream ss;
     std::ofstream file;
@@ -181,104 +186,47 @@ void dumpToGeoCUDA(ParticlesData *_data,
     file.close();
 }
 
-
-void pointHash(int _num_points,
-               int _gridRes,
-               ParticlesData * _data
-               )
-{
-    if(_num_points==0) return;
-    unsigned int nThreads = 1024;
-    unsigned int nBlocks = _num_points / nThreads + 1;
-    unsigned int nCells = _gridRes*_gridRes;
-
-    gpuErrchk( cudaPeekAtLastError() );
-
-    pointHash2D<<<nBlocks, nThreads>>>(thrust::raw_pointer_cast(_data->d_hash.data()),
-                                       thrust::raw_pointer_cast(_data->d_Px.data()),
-                                       thrust::raw_pointer_cast(_data->d_Py.data()),
-                                       _num_points,
-                                       _gridRes);
-
-    gpuErrchk( cudaPeekAtLastError() );
-}
-
-void sortHash(ParticlesData * _data)
-{
-    gpuErrchk( cudaPeekAtLastError() );
-    auto tuple = thrust::make_tuple( _data->d_Px.begin(), _data->d_Py.begin(), _data->d_Vx.begin(), _data->d_Vy.begin(), _data->d_prevPx.begin(), _data->d_prevPy.begin());
-    gpuErrchk( cudaPeekAtLastError() );
-    auto zippy = thrust::make_zip_iterator(tuple);
-    gpuErrchk( cudaPeekAtLastError() );
-    thrust::sort_by_key(_data->d_hash.begin(), _data->d_hash.end(), zippy); // bad alloc here
-    gpuErrchk( cudaPeekAtLastError() );
-}
-
-void countCellOcc(int _num_points,
-                  int _gridRes,
-                  ParticlesData * _data)
-{
-    if(_num_points==0) return;
-    unsigned int nThreads = 1024;
-    unsigned int nBlocks = _num_points / nThreads + 1;
-    unsigned int nCells = _gridRes*_gridRes;
-    countCellOccupancyD<<<nBlocks, nThreads>>>((uint *)thrust::raw_pointer_cast(_data->d_cellOcc.data()),
-                                               (uint *)thrust::raw_pointer_cast(_data->d_hash.data()),
-                                               nCells,
-                                               _num_points);
-}
-
-void exclusiveScan(ParticlesData * _data)
-{
-    gpuErrchk( cudaPeekAtLastError() );
-
-    thrust::exclusive_scan(_data->d_cellOcc.begin(),_data->d_cellOcc.end(),_data->d_scatterAdd.begin());
-    gpuErrchk( cudaPeekAtLastError() );
-
-}
-
 void hashOccSort(int _num_points,
                  int _gridRes,
-                 ParticlesData * _data
-                 )
+                 ParticlesData * io_data)
 {
     if(_num_points==0) return;
     unsigned int nThreads = 1024;
     unsigned int nBlocks = _num_points / nThreads + 1;
     unsigned int nCells = _gridRes*_gridRes;
 
-    gpuErrchk( cudaPeekAtLastError() );
+    //gpuErrchk( cudaPeekAtLastError() );
 
-    pointHash2D<<<nBlocks, nThreads>>>(thrust::raw_pointer_cast(_data->d_hash.data()),
-                                       thrust::raw_pointer_cast(_data->d_Px.data()),
-                                       thrust::raw_pointer_cast(_data->d_Py.data()),
+    pointHash2D<<<nBlocks, nThreads>>>(thrust::raw_pointer_cast(io_data->d_hash.data()),
+                                       thrust::raw_pointer_cast(io_data->d_Px.data()),
+                                       thrust::raw_pointer_cast(io_data->d_Py.data()),
                                        _num_points,
                                        _gridRes);
 
-    gpuErrchk( cudaPeekAtLastError() );
+    //gpuErrchk( cudaPeekAtLastError() );
     cudaThreadSynchronize();
     //if(cudaSuccess==cudaThreadSynchronize()) std::cout<<"it works"<<std::endl;
 
-    gpuErrchk( cudaPeekAtLastError() ); // stops here
-    auto tuple = thrust::make_tuple( _data->d_Px.begin(), _data->d_Py.begin(), _data->d_Vx.begin(), _data->d_Vy.begin(), _data->d_prevPx.begin(), _data->d_prevPy.begin());
-    gpuErrchk( cudaPeekAtLastError() );
+    //gpuErrchk( cudaPeekAtLastError() ); // stops here
+    auto tuple = thrust::make_tuple( io_data->d_Px.begin(), io_data->d_Py.begin(), io_data->d_Vx.begin(), io_data->d_Vy.begin(), io_data->d_prevPx.begin(), io_data->d_prevPy.begin());
+    //gpuErrchk( cudaPeekAtLastError() );
     auto zippy = thrust::make_zip_iterator(tuple);
-    gpuErrchk( cudaPeekAtLastError() );
-    thrust::sort_by_key(_data->d_hash.begin(), _data->d_hash.end(), zippy); // bad alloc here
+    //gpuErrchk( cudaPeekAtLastError() );
+    thrust::sort_by_key(io_data->d_hash.begin(), io_data->d_hash.end(), zippy); // bad alloc here
 
-    gpuErrchk( cudaPeekAtLastError() );
+    //gpuErrchk( cudaPeekAtLastError() );
     cudaThreadSynchronize();
-    _data->d_cellOcc.assign(nCells,0);
-    gpuErrchk( cudaPeekAtLastError() );
-    countCellOccupancyD<<<nBlocks, nThreads>>>((uint *)thrust::raw_pointer_cast(_data->d_cellOcc.data()),
-                                               (uint *)thrust::raw_pointer_cast(_data->d_hash.data()),
+    io_data->d_cellOcc.assign(nCells,0);
+    //gpuErrchk( cudaPeekAtLastError() );
+    countCellOccupancyD<<<nBlocks, nThreads>>>((uint *)thrust::raw_pointer_cast(io_data->d_cellOcc.data()),
+                                               (uint *)thrust::raw_pointer_cast(io_data->d_hash.data()),
                                                nCells,
                                                _num_points);
-    gpuErrchk( cudaPeekAtLastError() );
+    //gpuErrchk( cudaPeekAtLastError() );
     cudaThreadSynchronize();
-    gpuErrchk( cudaPeekAtLastError() );
-    thrust::exclusive_scan(_data->d_cellOcc.begin(),_data->d_cellOcc.end(),_data->d_scatterAdd.begin());
-    gpuErrchk( cudaPeekAtLastError() );
+    //gpuErrchk( cudaPeekAtLastError() );
+    thrust::exclusive_scan(io_data->d_cellOcc.begin(),io_data->d_cellOcc.end(),io_data->d_scatterAdd.begin());
+    //gpuErrchk( cudaPeekAtLastError() );
     cudaThreadSynchronize();
 }
 
@@ -286,7 +234,7 @@ void viscosity(unsigned int _N,
                unsigned int _gridRes,
                float _iRadius,
                float _timestep,
-               ParticlesData * _data)
+               ParticlesData * io_data)
 {
 
     unsigned int nThreads = 1024;
@@ -296,42 +244,42 @@ void viscosity(unsigned int _N,
                                      _gridRes,
                                      _iRadius,
                                      _timestep,
-                                     (float *)thrust::raw_pointer_cast(_data->d_Px.data()),
-                                     (float *)thrust::raw_pointer_cast(_data->d_Py.data()),
-                                     (float *)thrust::raw_pointer_cast(_data->d_Vx.data()),
-                                     (float *)thrust::raw_pointer_cast(_data->d_Vy.data()),
-                                     (uint *)thrust::raw_pointer_cast(_data->d_hash.data()),
-                                     (uint *)thrust::raw_pointer_cast(_data->d_cellOcc.data()),
-                                     (uint *)thrust::raw_pointer_cast(_data->d_scatterAdd.data()));
-    gpuErrchk( cudaPeekAtLastError() );
+                                     (float *)thrust::raw_pointer_cast(io_data->d_Px.data()),
+                                     (float *)thrust::raw_pointer_cast(io_data->d_Py.data()),
+                                     (float *)thrust::raw_pointer_cast(io_data->d_Vx.data()),
+                                     (float *)thrust::raw_pointer_cast(io_data->d_Vy.data()),
+                                     (uint *)thrust::raw_pointer_cast(io_data->d_hash.data()),
+                                     (uint *)thrust::raw_pointer_cast(io_data->d_cellOcc.data()),
+                                     (uint *)thrust::raw_pointer_cast(io_data->d_scatterAdd.data()));
+    //gpuErrchk( cudaPeekAtLastError() );
 }
 
 void integrate(unsigned int _N,
                float _timestep,
-               ParticlesData * _data)
+               ParticlesData * io_data)
 {
     unsigned int nThreads = 1024;
     unsigned int nBlocks = _N / nThreads + 1;
 
     integrateD<<<nBlocks,nThreads>>>(_N,
                                      _timestep,
-                                     (float *)thrust::raw_pointer_cast(_data->d_Px.data()),
-                                     (float *)thrust::raw_pointer_cast(_data->d_Py.data()),
-                                     (float *)thrust::raw_pointer_cast(_data->d_prevPx.data()),
-                                     (float *)thrust::raw_pointer_cast(_data->d_prevPy.data()),
-                                     (float *)thrust::raw_pointer_cast(_data->d_Vx.data()),
-                                     (float *)thrust::raw_pointer_cast(_data->d_Vy.data()));
+                                     (float *)thrust::raw_pointer_cast(io_data->d_Px.data()),
+                                     (float *)thrust::raw_pointer_cast(io_data->d_Py.data()),
+                                     (float *)thrust::raw_pointer_cast(io_data->d_prevPx.data()),
+                                     (float *)thrust::raw_pointer_cast(io_data->d_prevPy.data()),
+                                     (float *)thrust::raw_pointer_cast(io_data->d_Vx.data()),
+                                     (float *)thrust::raw_pointer_cast(io_data->d_Vy.data()));
 
     boundaries<<<nBlocks,nThreads>>>(_N,
-                                     (float *)thrust::raw_pointer_cast(_data->d_Px.data()),
-                                     (float *)thrust::raw_pointer_cast(_data->d_Py.data()));
+                                     (float *)thrust::raw_pointer_cast(io_data->d_Px.data()),
+                                     (float *)thrust::raw_pointer_cast(io_data->d_Py.data()));
 }
 
 void density(unsigned int _N,
              unsigned int _gridRes,
              float _iRadius,
              float _timestep,
-             ParticlesData * _data)
+             ParticlesData * io_data)
 {
 
     unsigned int nThreads = 1024;
@@ -341,56 +289,56 @@ void density(unsigned int _N,
                                    _gridRes,
                                    _iRadius,
                                    _timestep,
-                                   (float *)thrust::raw_pointer_cast(_data->d_Px.data()),
-                                   (float *)thrust::raw_pointer_cast(_data->d_Py.data()),
-                                   (float *)thrust::raw_pointer_cast(_data->d_Vx.data()),
-                                   (float *)thrust::raw_pointer_cast(_data->d_Vy.data()),
-                                   (uint *)thrust::raw_pointer_cast(_data->d_hash.data()),
-                                   (uint *)thrust::raw_pointer_cast(_data->d_cellOcc.data()),
-                                   (uint *)thrust::raw_pointer_cast(_data->d_scatterAdd.data()));
+                                   (float *)thrust::raw_pointer_cast(io_data->d_Px.data()),
+                                   (float *)thrust::raw_pointer_cast(io_data->d_Py.data()),
+                                   (float *)thrust::raw_pointer_cast(io_data->d_Vx.data()),
+                                   (float *)thrust::raw_pointer_cast(io_data->d_Vy.data()),
+                                   (uint *)thrust::raw_pointer_cast(io_data->d_hash.data()),
+                                   (uint *)thrust::raw_pointer_cast(io_data->d_cellOcc.data()),
+                                   (uint *)thrust::raw_pointer_cast(io_data->d_scatterAdd.data()));
 
     boundaries<<<nBlocks,nThreads>>>(_N,
-                                     (float *)thrust::raw_pointer_cast(_data->d_Px.data()),
-                                     (float *)thrust::raw_pointer_cast(_data->d_Py.data()));
+                                     (float *)thrust::raw_pointer_cast(io_data->d_Px.data()),
+                                     (float *)thrust::raw_pointer_cast(io_data->d_Py.data()));
 }
 
 void updateVelocity(unsigned int _N,
                     float _timestep,
-                    ParticlesData * _data)
+                    ParticlesData * io_data)
 {
     unsigned int nThreads = 1024;
     unsigned int nBlocks = _N / nThreads + 1;
     updateVelocityD<<<nBlocks,nThreads>>>(_N,
                                           _timestep,
-                                          (float *)thrust::raw_pointer_cast(_data->d_Px.data()),
-                                          (float *)thrust::raw_pointer_cast(_data->d_Py.data()),
-                                          (float *)thrust::raw_pointer_cast(_data->d_prevPx.data()),
-                                          (float *)thrust::raw_pointer_cast(_data->d_prevPy.data()),
-                                          (float *)thrust::raw_pointer_cast(_data->d_Vx.data()),
-                                          (float *)thrust::raw_pointer_cast(_data->d_Vy.data()));
+                                          (float *)thrust::raw_pointer_cast(io_data->d_Px.data()),
+                                          (float *)thrust::raw_pointer_cast(io_data->d_Py.data()),
+                                          (float *)thrust::raw_pointer_cast(io_data->d_prevPx.data()),
+                                          (float *)thrust::raw_pointer_cast(io_data->d_prevPy.data()),
+                                          (float *)thrust::raw_pointer_cast(io_data->d_Vx.data()),
+                                          (float *)thrust::raw_pointer_cast(io_data->d_Vy.data()));
 }
 
 void addGravity(unsigned int _N,
-                ParticlesData * _data)
+                ParticlesData * io_data)
 {
     unsigned int nThreads = 1024;
     unsigned int nBlocks = _N / nThreads + 1;
     addGravityD<<<nBlocks,nThreads>>>(_N,
-                                      (float *)thrust::raw_pointer_cast(_data->d_Vx.data()),
-                                      (float *)thrust::raw_pointer_cast(_data->d_Vy.data()));
+                                      (float *)thrust::raw_pointer_cast(io_data->d_Vx.data()),
+                                      (float *)thrust::raw_pointer_cast(io_data->d_Vy.data()));
 }
 
 void simulateD(unsigned int _N,
                unsigned int _gridRes,
                float _iRadius,
                float _timestep,
-               ParticlesData * _data)
+               ParticlesData * io_data)
 {
     unsigned int nThreads = 1024;
     unsigned int nBlocks = _N / nThreads + 1;
     //-------------------------GRAVITY----------------------------------------
-    addGravityD<<<nBlocks, nThreads>>>(_N,(float *)thrust::raw_pointer_cast(_data->d_Vx.data()),(float *)thrust::raw_pointer_cast(_data->d_Vy.data()));
-    gpuErrchk( cudaPeekAtLastError() );
+    addGravityD<<<nBlocks, nThreads>>>(_N,(float *)thrust::raw_pointer_cast(io_data->d_Vx.data()),(float *)thrust::raw_pointer_cast(io_data->d_Vy.data()));
+    //gpuErrchk( cudaPeekAtLastError() );
     cudaThreadSynchronize();
 
     //-------------------------VISCOSITY--------------------------------------
@@ -398,61 +346,61 @@ void simulateD(unsigned int _N,
                                       _gridRes,
                                       _iRadius,
                                       _timestep,
-                                      (float *)thrust::raw_pointer_cast(_data->d_Px.data()),
-                                      (float *)thrust::raw_pointer_cast(_data->d_Py.data()),
-                                      (float *)thrust::raw_pointer_cast(_data->d_Vx.data()),
-                                      (float *)thrust::raw_pointer_cast(_data->d_Vy.data()),
-                                      (uint *)thrust::raw_pointer_cast(_data->d_hash.data()),
-                                      (uint *)thrust::raw_pointer_cast(_data->d_cellOcc.data()),
-                                      (uint *)thrust::raw_pointer_cast(_data->d_scatterAdd.data()));
-    gpuErrchk( cudaPeekAtLastError() );
+                                      (float *)thrust::raw_pointer_cast(io_data->d_Px.data()),
+                                      (float *)thrust::raw_pointer_cast(io_data->d_Py.data()),
+                                      (float *)thrust::raw_pointer_cast(io_data->d_Vx.data()),
+                                      (float *)thrust::raw_pointer_cast(io_data->d_Vy.data()),
+                                      (uint *)thrust::raw_pointer_cast(io_data->d_hash.data()),
+                                      (uint *)thrust::raw_pointer_cast(io_data->d_cellOcc.data()),
+                                      (uint *)thrust::raw_pointer_cast(io_data->d_scatterAdd.data()));
+    //gpuErrchk( cudaPeekAtLastError() );
     cudaThreadSynchronize();
 
     //--------------------------INTEGRATE-------------------------------------
     integrateD<<<nBlocks,nThreads>>>(_N,
                                      _timestep,
-                                     (float *)thrust::raw_pointer_cast(_data->d_Px.data()),
-                                     (float *)thrust::raw_pointer_cast(_data->d_Py.data()),
-                                     (float *)thrust::raw_pointer_cast(_data->d_prevPx.data()),
-                                     (float *)thrust::raw_pointer_cast(_data->d_prevPy.data()),
-                                     (float *)thrust::raw_pointer_cast(_data->d_Vx.data()),
-                                     (float *)thrust::raw_pointer_cast(_data->d_Vy.data()));
-    gpuErrchk( cudaPeekAtLastError() );
+                                     (float *)thrust::raw_pointer_cast(io_data->d_Px.data()),
+                                     (float *)thrust::raw_pointer_cast(io_data->d_Py.data()),
+                                     (float *)thrust::raw_pointer_cast(io_data->d_prevPx.data()),
+                                     (float *)thrust::raw_pointer_cast(io_data->d_prevPy.data()),
+                                     (float *)thrust::raw_pointer_cast(io_data->d_Vx.data()),
+                                     (float *)thrust::raw_pointer_cast(io_data->d_Vy.data()));
+    //gpuErrchk( cudaPeekAtLastError() );
     cudaThreadSynchronize();
     boundaries<<<nBlocks,nThreads>>>(_N,
-                                     (float *)thrust::raw_pointer_cast(_data->d_Px.data()),
-                                     (float *)thrust::raw_pointer_cast(_data->d_Py.data()));
+                                     (float *)thrust::raw_pointer_cast(io_data->d_Px.data()),
+                                     (float *)thrust::raw_pointer_cast(io_data->d_Py.data()));
     cudaThreadSynchronize();
 
     //---------------------------HASHING---------------------------------------
-    pointHash2D<<<nBlocks, nThreads>>>((uint *)thrust::raw_pointer_cast(_data->d_hash.data()),
-                                       (float *)thrust::raw_pointer_cast(_data->d_Px.data()),
-                                       (float *)thrust::raw_pointer_cast(_data->d_Py.data()),
+    pointHash2D<<<nBlocks, nThreads>>>((uint *)thrust::raw_pointer_cast(io_data->d_hash.data()),
+                                       (float *)thrust::raw_pointer_cast(io_data->d_Px.data()),
+                                       (float *)thrust::raw_pointer_cast(io_data->d_Py.data()),
                                        _N,
                                        _gridRes);
     cudaThreadSynchronize();
 
     // Now we can sort our points to ensure that points in the same grid cells occupy contiguous memory
-    thrust::sort_by_key(_data->d_hash.begin(), _data->d_hash.end(),
+    thrust::sort_by_key(io_data->d_hash.begin(), io_data->d_hash.end(),
                         thrust::make_zip_iterator(
-                            thrust::make_tuple( _data->d_Px.begin(),
-                                                _data->d_Py.begin(),
-                                                _data->d_prevPx.begin(),
-                                                _data->d_prevPy.begin(),
-                                                _data->d_Vx.begin(),
-                                                _data->d_Vy.begin())));
+                            thrust::make_tuple( io_data->d_Px.begin(),
+                                                io_data->d_Py.begin(),
+                                                io_data->d_prevPx.begin(),
+                                                io_data->d_prevPy.begin(),
+                                                io_data->d_Vx.begin(),
+                                                io_data->d_Vy.begin())));
     cudaThreadSynchronize();
 
-    _data->d_cellOcc.assign(_gridRes*_gridRes,0);
+    io_data->d_cellOcc.assign(_gridRes*_gridRes,0);
     // Now we can count the number of points in each grid cell
-    countCellOccupancyD<<<nBlocks, nThreads>>>((uint *)thrust::raw_pointer_cast(_data->d_cellOcc.data()),
-                                               (uint *)thrust::raw_pointer_cast(_data->d_hash.data()),
-                                               _data->d_cellOcc.size(), _data->d_hash.size());
+    countCellOccupancyD<<<nBlocks, nThreads>>>((uint *)thrust::raw_pointer_cast(io_data->d_cellOcc.data()),
+                                               (uint *)thrust::raw_pointer_cast(io_data->d_hash.data()),
+                                               io_data->d_cellOcc.size(), io_data->d_hash.size());
 
     // DONE CORRECTLY
     cudaThreadSynchronize();
-    _data->d_scatterAdd.resize(_gridRes*_gridRes,0);
-    thrust::exclusive_scan(_data->d_cellOcc.begin(),_data->d_cellOcc.end(),_data->d_scatterAdd.begin());
+    io_data->d_scatterAdd.resize(_gridRes*_gridRes,0);
+    thrust::exclusive_scan(io_data->d_cellOcc.begin(),io_data->d_cellOcc.end(),io_data->d_scatterAdd.begin());
     cudaThreadSynchronize();
 
 
@@ -470,37 +418,37 @@ void simulateD(unsigned int _N,
 
     //---------------------------DOUBLE DENSITY------------------------------
 
-    gpuErrchk( cudaPeekAtLastError() );
+    //gpuErrchk( cudaPeekAtLastError() );
     densityD<<<nBlocks,nThreads>>>(_N,
                                    _gridRes,
                                    _iRadius,
                                    _timestep,
-                                   (float *)thrust::raw_pointer_cast(_data->d_Px.data()),
-                                   (float *)thrust::raw_pointer_cast(_data->d_Py.data()),
-                                   (float *)thrust::raw_pointer_cast(_data->d_Vx.data()),
-                                   (float *)thrust::raw_pointer_cast(_data->d_Vy.data()),
-                                   (uint *)thrust::raw_pointer_cast(_data->d_hash.data()),
-                                   (uint *)thrust::raw_pointer_cast(_data->d_cellOcc.data()),
-                                   (uint *)thrust::raw_pointer_cast(_data->d_scatterAdd.data()));
+                                   (float *)thrust::raw_pointer_cast(io_data->d_Px.data()),
+                                   (float *)thrust::raw_pointer_cast(io_data->d_Py.data()),
+                                   (float *)thrust::raw_pointer_cast(io_data->d_Vx.data()),
+                                   (float *)thrust::raw_pointer_cast(io_data->d_Vy.data()),
+                                   (uint *)thrust::raw_pointer_cast(io_data->d_hash.data()),
+                                   (uint *)thrust::raw_pointer_cast(io_data->d_cellOcc.data()),
+                                   (uint *)thrust::raw_pointer_cast(io_data->d_scatterAdd.data()));
 
-    gpuErrchk( cudaPeekAtLastError() );
+    //gpuErrchk( cudaPeekAtLastError() );
     cudaThreadSynchronize();
     boundaries<<<nBlocks,nThreads>>>(_N,
-                                     (float *)thrust::raw_pointer_cast(_data->d_Px.data()),
-                                     (float *)thrust::raw_pointer_cast(_data->d_Py.data()));
+                                     (float *)thrust::raw_pointer_cast(io_data->d_Px.data()),
+                                     (float *)thrust::raw_pointer_cast(io_data->d_Py.data()));
     cudaThreadSynchronize();
-    gpuErrchk( cudaPeekAtLastError() );
+    //gpuErrchk( cudaPeekAtLastError() );
 
     //---------------------------UPDATE VELOCITY-------------------------------
     updateVelocityD<<<nBlocks,nThreads>>>(_N,
                                           _timestep,
-                                          (float *)thrust::raw_pointer_cast(_data->d_Px.data()),
-                                          (float *)thrust::raw_pointer_cast(_data->d_Py.data()),
-                                          (float *)thrust::raw_pointer_cast(_data->d_prevPx.data()),
-                                          (float *)thrust::raw_pointer_cast(_data->d_prevPy.data()),
-                                          (float *)thrust::raw_pointer_cast(_data->d_Vx.data()),
-                                          (float *)thrust::raw_pointer_cast(_data->d_Vy.data()));
-    gpuErrchk( cudaPeekAtLastError() );
+                                          (float *)thrust::raw_pointer_cast(io_data->d_Px.data()),
+                                          (float *)thrust::raw_pointer_cast(io_data->d_Py.data()),
+                                          (float *)thrust::raw_pointer_cast(io_data->d_prevPx.data()),
+                                          (float *)thrust::raw_pointer_cast(io_data->d_prevPy.data()),
+                                          (float *)thrust::raw_pointer_cast(io_data->d_Vx.data()),
+                                          (float *)thrust::raw_pointer_cast(io_data->d_Vy.data()));
+    //gpuErrchk( cudaPeekAtLastError() );
     cudaThreadSynchronize();
 
 }

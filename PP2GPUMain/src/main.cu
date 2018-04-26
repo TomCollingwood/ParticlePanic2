@@ -370,7 +370,7 @@ void dumpToGeo(const thrust::device_vector<float> &Px,
 int main(int argc, char **argv) {
 
     int m_num_points = 10000;
-    int m_num_frames = 240;
+    int m_num_frames = 60;
     float m_interactionRadius = 0.005f;
     float m_timestep = 0.002f;
     int m_grid_resolution = 4;
